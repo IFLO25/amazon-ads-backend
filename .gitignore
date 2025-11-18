@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+backend-test.log
+backend.log
+oauth-server.log
+backend-startup.log
+backend-restart.log
+
+# Remove test files with secrets
+convert-code-to-token.js
+test-api.js
+amazon-oauth.html
+get-refresh-token.js
+get-token-from-code.js
+oauth-local-server.js

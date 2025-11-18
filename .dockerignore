@@ -1,0 +1,17 @@
+
+node_modules
+dist
+.env
+*.log
+.git
+.gitignore
+README.md
+*.md
+*.pdf
+.build
+.yarn
+.pnp*
+yarn.lock
+backend.log
+backend-test.log
+amazon-oauth.html

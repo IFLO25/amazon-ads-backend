@@ -1,0 +1,57 @@
+[2J[3J[H[[90m7:12:05 AM[0m] Starting compilation in watch mode...
+
+[[90m7:12:12 AM[0m] Found 0 errors. Watching for file changes.
+
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPrismaModule dependencies initialized[39m[38;5;3m +14ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mHttpModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDiscoveryModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mScheduleModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAmazonAuthModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBudgetModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mCampaignsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mOptimizationModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAppController {/}:[39m[38;5;3m +117ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mConfigController {/api/config}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/config/status, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/config/credentials, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mStatusController {/api/status}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/status, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/status/health, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mCampaignsController {/api/campaigns}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/campaigns, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/campaigns/:id, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/campaigns/:id/performance, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/campaigns/sync, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/campaigns/sync-metrics, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mOptimizationController {/api/optimize}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/optimize, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/optimize/history, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mBudgetController {/api/budget}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/budget, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/budget/history, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/budget/can-spend, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:12:16 AM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +85ms[39m
+
+  ╔════════════════════════════════════════════════════════════╗
+  ║  Amazon Advertising Automation Service                     ║
+  ║  Backend läuft auf: http://localhost:3000                ║
+  ║  Swagger API Docs: http://localhost:3000/api-docs        ║
+  ╚════════════════════════════════════════════════════════════╝
+  
+[32m[Nest] 2960  - [39m11/12/2025, 7:30:00 AM [32m    LOG[39m [38;5;3m[OptimizationService] [39m[32mStarting scheduled sync...[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:30:00 AM [32m    LOG[39m [38;5;3m[CampaignsService] [39m[32mStarting campaign sync from Amazon...[39m
+[32m[Nest] 2960  - [39m11/12/2025, 7:30:00 AM [32m    LOG[39m [38;5;3m[AmazonAuthService] [39m[32mAccess token expired or missing, refreshing...[39m
+[31m[Nest] 2960  - [39m11/12/2025, 7:30:00 AM [31m  ERROR[39m [38;5;3m[AmazonAuthService] [39m[31mFailed to refresh access token[39m
+[31m[Nest] 2960  - [39m11/12/2025, 7:30:00 AM [31m  ERROR[39m [38;5;3m[AmazonAuthService] [39mObject(2) {
+  error_description: [32m'Client authentication failed'[39m,
+  error: [32m'invalid_client'[39m
+}
+[31m[Nest] 2960  - [39m11/12/2025, 7:30:00 AM [31m  ERROR[39m [38;5;3m[CampaignsService] [39m[31mFailed to sync campaigns from Amazon[39m
+Failed to refresh Amazon access token
+[31m[Nest] 2960  - [39m11/12/2025, 7:30:00 AM [31m  ERROR[39m [38;5;3m[OptimizationService] [39m[31mScheduled sync failed[39m
+Failed to refresh Amazon access token

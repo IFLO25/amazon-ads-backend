@@ -1,0 +1,45 @@
+
+services:
+  - type: web
+    name: amazon-ads-optimizer
+    env: node
+    region: frankfurt
+    plan: free
+    buildCommand: yarn install && npx prisma generate && yarn build
+    startCommand: yarn start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        generateValue: true
+      - key: AMAZON_CLIENT_ID
+        sync: false
+      - key: AMAZON_CLIENT_SECRET
+        sync: false
+      - key: AMAZON_REFRESH_TOKEN
+        sync: false
+      - key: AMAZON_REGION
+        value: EU
+      - key: AMAZON_MARKETPLACE_ID
+        value: A1PA6795UKMFR9
+      - key: TARGET_ACOS_MIN
+        value: 5
+      - key: TARGET_ACOS_MAX
+        value: 15
+      - key: PAUSE_ACOS_THRESHOLD
+        value: 50
+      - key: MIN_BID
+        value: 0.20
+      - key: MAX_BID
+        value: 5.00
+      - key: MONTHLY_BUDGET_MIN
+        value: 1000
+      - key: MONTHLY_BUDGET_MAX
+        value: 2000
+
+databases:
+  - name: amazon-ads-db
+    databaseName: amazon_ads
+    plan: free

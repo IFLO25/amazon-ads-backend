@@ -1,0 +1,170 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Campaign {
+  id              String   @id @default(uuid())
+  campaignId      String   @unique
+  name            String
+  campaignType    String   @default("SPONSORED_PRODUCTS")
+  targetingType   String?
+  status          String   @default("ENABLED")
+  state           String   @default("ENABLED")
+  budget          Float    @default(50)
+  targetAcos      Float    @default(15)
+  currentAcos     Float?
+  lastOptimized   DateTime?
+  lastUpdated     DateTime @default(now()) @updatedAt
+  createdAt       DateTime @default(now())
+  
+  performanceMetrics    PerformanceMetric[]
+  optimizationHistory   OptimizationHistory[]
+  keywordOptimizations  KeywordOptimization[]
+  keywords              Keyword[]
+  placementAdjustments  PlacementBidAdjustment[]
+  
+  @@index([campaignId])
+  @@index([status])
+}
+
+model PerformanceMetric {
+  id          String   @id @default(uuid())
+  campaignId  String
+  date        DateTime @db.Date
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  spend       Float    @default(0)
+  sales       Float    @default(0)
+  acos        Float?
+  conversions Int      @default(0)
+  createdAt   DateTime @default(now())
+  
+  campaign    Campaign @relation(fields: [campaignId], references: [campaignId], onDelete: Cascade)
+  
+  @@unique([campaignId, date])
+  @@index([campaignId])
+  @@index([date])
+}
+
+model OptimizationHistory {
+  id          String   @id @default(uuid())
+  campaignId  String
+  timestamp   DateTime @default(now())
+  action      String
+  oldValue    String?
+  newValue    String?
+  reason      String
+  
+  campaign    Campaign @relation(fields: [campaignId], references: [campaignId], onDelete: Cascade)
+  
+  @@index([campaignId])
+  @@index([timestamp])
+}
+
+model BudgetTracking {
+  id           String   @id @default(uuid())
+  month        DateTime @db.Date
+  totalBudget  Float
+  spent        Float    @default(0)
+  remaining    Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@unique([month])
+  @@index([month])
+}
+
+model TokenStorage {
+  id            String   @id @default(uuid())
+  accessToken   String
+  refreshToken  String?
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model KeywordOptimization {
+  id            String   @id @default(uuid())
+  campaignId    String
+  keyword       String
+  action        String
+  reason        String
+  previousBid   Float?
+  newBid        Float?
+  previousAcos  Float?
+  optimizedAt   DateTime @default(now())
+  
+  campaign      Campaign @relation(fields: [campaignId], references: [campaignId], onDelete: Cascade)
+  
+  @@index([campaignId])
+  @@index([optimizedAt])
+  @@index([action])
+}
+
+model OptimizationRun {
+  id                      String   @id @default(uuid())
+  type                    String
+  negativeKeywordsAdded   Int      @default(0)
+  positiveKeywordsAdded   Int      @default(0)
+  keywordsPaused          Int      @default(0)
+  bidsAdjusted            Int      @default(0)
+  executedAt              DateTime @default(now())
+  
+  @@index([type])
+  @@index([executedAt])
+}
+
+model Alert {
+  id             String   @id @default(uuid())
+  type           String
+  severity       String
+  title          String
+  message        String
+  campaignId     String?
+  data           String?
+  createdAt      DateTime @default(now())
+  
+  @@index([severity])
+  @@index([createdAt])
+}
+
+model PlacementBidAdjustment {
+  id                 String   @id @default(uuid())
+  campaignId         String
+  placement          String
+  adjustmentPercent  Int
+  lastUpdated        DateTime @default(now()) @updatedAt
+  
+  campaign           Campaign @relation(fields: [campaignId], references: [campaignId], onDelete: Cascade)
+
+  @@unique([campaignId, placement])
+  @@index([campaignId])
+}
+
+model Keyword {
+  id            String   @id @default(uuid())
+  keywordId     String   @unique
+  campaignId    String
+  keywordText   String
+  matchType     String
+  status        String   @default("ENABLED")
+  bid           Float    @default(0.50)
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  spend         Float    @default(0)
+  sales         Float    @default(0)
+  conversions   Int      @default(0)
+  lastUpdated   DateTime @default(now()) @updatedAt
+  
+  campaign      Campaign @relation(fields: [campaignId], references: [campaignId], onDelete: Cascade)
+  
+  @@index([campaignId])
+  @@index([keywordText])
+  @@index([status])
+}
