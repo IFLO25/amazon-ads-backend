@@ -12,6 +12,7 @@ export class AmazonApiClient {
   private lastRequestTime = 0;
   private requestCount = 0;
   private readonly maxRequestsPerMinute = 60;
+  private profileId: string | null = null; // Cache profile ID
 
   constructor(
     private readonly configService: ConfigService,
@@ -52,9 +53,14 @@ export class AmazonApiClient {
         const accessToken = await this.authService.getAccessToken();
         config.headers.Authorization = `Bearer ${accessToken}`;
 
-        // Add advertising account ID header
-        const accountId = this.configService.get<string>('amazon.advertisingAccountId');
-        config.headers['Amazon-Advertising-API-Scope'] = accountId;
+        // Get and add profile ID (only for non-profile requests)
+        if (!config.url?.includes('/v2/profiles')) {
+          const profileId = await this.getProfileId();
+          if (profileId) {
+            config.headers['Amazon-Advertising-API-Scope'] = profileId;
+            this.logger.debug(`🔑 Using Profile ID: ${profileId}`);
+          }
+        }
 
         this.logger.debug(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`);
         this.logger.debug(`   Headers: ClientId=${config.headers['Amazon-Advertising-API-ClientId'] ? 'SET' : 'MISSING'}, Scope=${config.headers['Amazon-Advertising-API-Scope'] || 'MISSING'}`);
@@ -135,6 +141,66 @@ export class AmazonApiClient {
    */
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Get Profile ID from Amazon (cached after first call)
+   */
+  private async getProfileId(): Promise<string | null> {
+    // Return cached profile ID if available
+    if (this.profileId) {
+      return this.profileId;
+    }
+
+    try {
+      this.logger.log('🔍 Fetching Profile ID from Amazon...');
+      
+      // Get access token
+      const accessToken = await this.authService.getAccessToken();
+      const clientId = this.configService.get<string>('amazon.clientId');
+      const apiEndpoint = this.configService.get<string>('amazon.apiEndpoint');
+
+      // Make direct request to /v2/profiles (without interceptor to avoid infinite loop)
+      const response = await axios.get(`${apiEndpoint}/v2/profiles`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Amazon-Advertising-API-ClientId': clientId,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const profiles = response.data;
+      this.logger.log(`📋 Found ${profiles.length} profile(s)`);
+
+      if (profiles.length === 0) {
+        this.logger.error('❌ No profiles found for this account');
+        return null;
+      }
+
+      // Use the first profile (or filter by accountId if needed)
+      const accountId = this.configService.get<string>('amazon.advertisingAccountId');
+      let selectedProfile = profiles[0];
+
+      // Try to find profile matching account ID
+      if (accountId) {
+        const matchingProfile = profiles.find((p: any) => p.accountInfo?.id === accountId);
+        if (matchingProfile) {
+          selectedProfile = matchingProfile;
+          this.logger.log(`✅ Found profile matching Account ID: ${accountId}`);
+        }
+      }
+
+      this.profileId = selectedProfile.profileId.toString();
+      this.logger.log(`✅ Using Profile ID: ${this.profileId}`);
+      this.logger.log(`   - Profile Name: ${selectedProfile.accountInfo?.name || 'N/A'}`);
+      this.logger.log(`   - Marketplace: ${selectedProfile.countryCode}`);
+      this.logger.log(`   - Type: ${selectedProfile.accountInfo?.type || 'N/A'}`);
+
+      return this.profileId;
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch Profile ID', error.response?.data || error.message);
+      return null;
+    }
   }
 
   /**
