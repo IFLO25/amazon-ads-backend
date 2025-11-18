@@ -86,15 +86,44 @@ export class AmazonAuthService {
       );
     }
 
-    try {
+   try {
+      // Amazon expects Basic Authentication with client_id:client_secret
+      const authString = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+      
       const response = await axios.post<TokenResponse>(
         tokenEndpoint!,
         new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token: refreshToken,
-          client_id: clientId,
-          client_secret: clientSecret,
         }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Basic ${authString}`,
+          },
+        },
+      );
+
+      const data = response.data as TokenResponse;
+      const { access_token: accessToken, expires_in, refresh_token: newRefreshToken } = data;
+
+      // Calculate expiration time (subtract 5 minutes for safety margin)
+      const expiresAt = new Date(Date.now() + (expires_in - 300) * 1000);
+
+      // Store in memory (no database for MVP)
+      this.accessToken = accessToken;
+      this.tokenExpiresAt = expiresAt;
+
+      this.logger.log('✅ Access token refreshed successfully!');
+      this.logger.log(`🕐 Token expires at: ${expiresAt.toISOString()}`);
+      this.logger.log(`⏰ Valid for: ${Math.floor(expires_in / 60)} minutes`);
+      return accessToken;
+    } catch (error) {
+      this.logger.error('❌ Failed to refresh access token');
+      this.logger.error(`Status: ${error.response?.status}`);
+      this.logger.error(`Data: ${JSON.stringify(error.response?.data)}`);
+      throw new Error('Failed to refresh Amazon access token');
+    }
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
