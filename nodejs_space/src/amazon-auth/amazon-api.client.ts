@@ -52,7 +52,7 @@ export class AmazonApiClient {
         // Add access token
         const accessToken = await this.authService.getAccessToken();
         
-        this.logger.debug(`🔐 Access Token for request: ${accessToken ? accessToken.substring(0, 20) + '...' : '❌ EMPTY/UNDEFINED'}`);
+        this.logger.log(`🔐 Access Token for request: ${accessToken ? accessToken.substring(0, 30) + '...' : '❌ EMPTY/UNDEFINED'}`);
         
         if (!accessToken) {
           this.logger.error('❌ CRITICAL: Access Token is empty or undefined!');
@@ -60,19 +60,19 @@ export class AmazonApiClient {
         }
         
         config.headers.Authorization = `Bearer ${accessToken}`;
-        this.logger.debug(`📝 Authorization Header: Bearer ${accessToken.substring(0, 20)}...`);
+        this.logger.log(`📝 Authorization Header: Bearer ${accessToken.substring(0, 30)}...`);
 
         // Get and add profile ID (only for non-profile requests)
         if (!config.url?.includes('/v2/profiles')) {
           const profileId = await this.getProfileId();
           if (profileId) {
             config.headers['Amazon-Advertising-API-Scope'] = profileId;
-            this.logger.debug(`🔑 Using Profile ID: ${profileId}`);
+            this.logger.log(`🔑 Using Profile ID: ${profileId}`);
           }
         }
 
-        this.logger.debug(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`);
-        this.logger.debug(`   Headers: ClientId=${config.headers['Amazon-Advertising-API-ClientId'] ? 'SET' : 'MISSING'}, Scope=${config.headers['Amazon-Advertising-API-Scope'] || 'MISSING'}`);
+        this.logger.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+        this.logger.log(`   Headers: ClientId=${config.headers['Amazon-Advertising-API-ClientId'] ? 'SET' : 'MISSING'}, Scope=${config.headers['Amazon-Advertising-API-Scope'] || 'MISSING'}`);
         return config;
       },
       (error) => {

@@ -41,21 +41,8 @@ export class CampaignsService {
     try {
       this.logger.log('Starting campaign sync from Amazon...');
 
-      // Fetch campaigns from Amazon API (try v3 first, fallback to older versions)
-      let campaigns: AmazonCampaign[];
-      try {
-        // Try v3 (current version)
-        campaigns = await this.amazonApi.get<AmazonCampaign[]>('/sp/campaigns');
-      } catch (error) {
-        this.logger.warn('v3 endpoint failed, trying legacy endpoints...');
-        try {
-          // Fallback to v2
-          campaigns = await this.amazonApi.get<AmazonCampaign[]>('/v2/sp/campaigns');
-        } catch (e2) {
-          // Last resort - try without version prefix
-          campaigns = await this.amazonApi.get<AmazonCampaign[]>('/campaigns');
-        }
-      }
+      // Fetch campaigns from Amazon API (SP API v3)
+      const campaigns = await this.amazonApi.get<AmazonCampaign[]>('/sp/campaigns');
 
       this.logger.log(`Fetched ${campaigns.length} campaigns from Amazon`);
 
@@ -239,7 +226,7 @@ export class CampaignsService {
         };
       }
 
-      await this.amazonApi.put(`/v2/sp/campaigns/${campaignId}`, amazonUpdates);
+      await this.amazonApi.put(`/sp/campaigns/${campaignId}`, amazonUpdates);
 
       // Update in database
       await this.prisma.campaign.update({
