@@ -21,8 +21,8 @@ RUN npm install --legacy-peer-deps
 # Prisma Schema kopieren
 COPY nodejs_space/prisma ./prisma/
 
-# Prisma Client generieren
-RUN npx prisma generate
+# Prisma Client generieren (mit Dummy DATABASE_URL für Build)
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 
 # Source code kopieren (aus nodejs_space!)
 COPY nodejs_space/src ./src/
@@ -37,5 +37,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start command
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/main"]
+# Start command (mit optionaler DB)
+CMD ["sh", "-c", "if [ -n \"$DATABASE_URL\" ]; then npx prisma db push --accept-data-loss; fi && node dist/main"]
