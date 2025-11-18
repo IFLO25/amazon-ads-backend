@@ -75,6 +75,11 @@ export class AmazonAuthService {
       );
     }
 
+    this.logger.log('🔄 Refreshing access token...');
+    this.logger.log(`   - Endpoint: ${tokenEndpoint}`);
+    this.logger.log(`   - Client ID: ${clientId ? clientId.substring(0, 20) + '...' : 'MISSING'}`);
+    this.logger.log(`   - Refresh Token: ${refreshToken ? refreshToken.substring(0, 20) + '...' : 'MISSING'}`);
+
     try {
       const response = await axios.post<TokenResponse>(
         tokenEndpoint!,
@@ -92,7 +97,17 @@ export class AmazonAuthService {
       );
 
       const data = response.data as TokenResponse;
+      this.logger.log('📦 Token response received:', JSON.stringify(data, null, 2));
+
       const { access_token: accessToken, expires_in, refresh_token: newRefreshToken } = data;
+
+      if (!accessToken) {
+        this.logger.error('❌ No access_token in response!');
+        throw new Error('No access_token received from Amazon');
+      }
+
+      this.logger.log(`🔑 Access Token: ${accessToken.substring(0, 30)}...`);
+      this.logger.log(`⏱️ Expires in: ${expires_in} seconds`);
 
       // Calculate expiration time (subtract 5 minutes for safety margin)
       const expiresAt = new Date(Date.now() + (expires_in - 300) * 1000);
@@ -106,7 +121,10 @@ export class AmazonAuthService {
       
       return accessToken;
     } catch (error) {
-      this.logger.error('❌ Failed to refresh access token', error.response?.data || error.message);
+      this.logger.error('❌ Failed to refresh access token');
+      this.logger.error(`   Status: ${error.response?.status}`);
+      this.logger.error(`   Data: ${JSON.stringify(error.response?.data)}`);
+      this.logger.error(`   Message: ${error.message}`);
       throw new Error('Failed to refresh Amazon access token');
     }
   }
