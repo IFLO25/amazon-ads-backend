@@ -7,22 +7,25 @@ WORKDIR /app
 # System-Dependencies für Prisma
 RUN apk add --no-cache openssl
 
-# Package files kopieren
-COPY package*.json ./
-COPY tsconfig*.json ./
-COPY nest-cli.json ./
+# ✅ KORREKTER Pfad: nodejs_space/ verwenden
+WORKDIR /app
+
+# Package files aus nodejs_space kopieren
+COPY nodejs_space/package*.json ./
+COPY nodejs_space/tsconfig*.json ./
+COPY nodejs_space/nest-cli.json ./
 
 # Dependencies installieren
 RUN npm install --legacy-peer-deps
 
 # Prisma Schema kopieren
-COPY prisma ./prisma/
+COPY nodejs_space/prisma ./prisma/
 
 # Prisma Client generieren
 RUN npx prisma generate
 
-# Source code kopieren
-COPY src ./src/
+# Source code kopieren (aus nodejs_space!)
+COPY nodejs_space/src ./src/
 
 # Build
 RUN npm run build
