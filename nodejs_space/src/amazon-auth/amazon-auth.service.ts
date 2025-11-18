@@ -1,7 +1,6 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 
 interface TokenResponse {
@@ -19,7 +18,6 @@ export class AmazonAuthService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -54,15 +52,6 @@ export class AmazonAuthService {
   async getAccessToken(): Promise<string> {
     // Check if we have a valid token in memory
     if (this.accessToken && this.tokenExpiresAt && new Date() < this.tokenExpiresAt) {
-      return this.accessToken as string;
-    }
-
-    // Check database for stored token
-    const storedToken = await this.getStoredToken();
-    if (storedToken && new Date() < storedToken.expiresAt) {
-      this.accessToken = storedToken.accessToken;
-      this.tokenExpiresAt = storedToken.expiresAt;
-      this.logger.log('Using stored access token from database');
       return this.accessToken as string;
     }
 
@@ -112,44 +101,14 @@ export class AmazonAuthService {
       this.accessToken = accessToken;
       this.tokenExpiresAt = expiresAt;
 
-      // Store in database
-      await this.storeToken(accessToken, newRefreshToken || refreshToken, expiresAt);
-
-      this.logger.log('Access token refreshed successfully');
+      this.logger.log('✅ Access token refreshed successfully');
+      this.logger.log(`🔑 Token expires at: ${expiresAt.toISOString()}`);
+      
       return accessToken;
     } catch (error) {
-      this.logger.error('Failed to refresh access token', error.response?.data || error.message);
+      this.logger.error('❌ Failed to refresh access token', error.response?.data || error.message);
       throw new Error('Failed to refresh Amazon access token');
     }
-  }
-
-  /**
-   * Get stored token from database
-   */
-  private async getStoredToken() {
-    const tokens = await this.prisma.tokenStorage.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 1,
-    });
-
-    return tokens.length > 0 ? tokens[0] : null;
-  }
-
-  /**
-   * Store token in database
-   */
-  private async storeToken(accessToken: string, refreshToken: string, expiresAt: Date) {
-    // Delete old tokens
-    await this.prisma.tokenStorage.deleteMany({});
-
-    // Store new token
-    await this.prisma.tokenStorage.create({
-      data: {
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        expiresAt: expiresAt,
-      },
-    });
   }
 
   /**
