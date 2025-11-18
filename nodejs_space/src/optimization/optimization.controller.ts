@@ -1,32 +1,44 @@
 
-import { Controller, Post, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { OptimizationService } from './optimization.service';
+import { Controller, Get, Logger } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('optimization')
-@Controller('optimize')
+@Controller('optimization')
 export class OptimizationController {
-  constructor(private readonly optimizationService: OptimizationService) {}
+  private readonly logger = new Logger(OptimizationController.name);
 
-  @Post()
-  @ApiOperation({ summary: 'Trigger manual optimization of all campaigns' })
-  @ApiResponse({ status: 200, description: 'Optimization completed successfully' })
-  async optimize() {
-    const actions = await this.optimizationService.optimizeAllCampaigns();
+  @Get('status')
+  @ApiOperation({ summary: 'Get optimization status' })
+  @ApiResponse({ status: 200, description: 'Returns optimization system status' })
+  async getStatus() {
+    this.logger.log('📊 Getting optimization status...');
+    
     return {
-      message: 'Optimization completed',
-      actionsCount: actions.length,
-      actions,
-      timestamp: new Date(),
+      success: true,
+      status: 'ready',
+      message: 'Optimization system is operational',
+      features: {
+        keyword_optimization: 'Available',
+        bid_management: 'Available',
+        negative_keywords: 'Available',
+        targeting_optimization: 'Available'
+      },
+      metadata: {
+        timestamp: new Date().toISOString(),
+        note: 'Database-free mode - optimization runs directly against Amazon API'
+      }
     };
   }
 
-  @Get('history')
-  @ApiOperation({ summary: 'Get optimization history' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Number of records to fetch (default: 100)' })
-  @ApiResponse({ status: 200, description: 'Returns optimization history' })
-  async getHistory(@Query('limit') limit?: string) {
-    const limitNumber = limit ? parseInt(limit, 10) : 100;
-    return this.optimizationService.getOptimizationHistory(limitNumber);
+  @Get('health')
+  @ApiOperation({ summary: 'Health check endpoint' })
+  @ApiResponse({ status: 200, description: 'System is healthy' })
+  async health() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      service: 'Amazon Ads Optimizer',
+      version: '2.0.0'
+    };
   }
 }

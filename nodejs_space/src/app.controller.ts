@@ -1,12 +1,29 @@
+
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  getHello() {
+    return {
+      message: 'Amazon Ads Optimizer API',
+      version: '2.0.0',
+      status: 'running',
+      endpoints: {
+        campaigns: '/api/campaigns',
+        keywords: '/api/keywords',
+        optimization: '/api/optimization/status',
+        health: '/api/optimization/health'
+      },
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  @Get('health')
+  health() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString()
+    };
   }
 }

@@ -1,56 +1,45 @@
 
-import { Controller, Post, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { KeywordsService } from './keywords.service';
+import { Controller, Get, Logger } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { AmazonApiClient } from '../amazon-auth/amazon-api.client';
 
-@ApiTags('Keywords')
+@ApiTags('keywords')
 @Controller('keywords')
 export class KeywordsController {
-  constructor(private readonly keywordsService: KeywordsService) {}
+  private readonly logger = new Logger(KeywordsController.name);
 
-  @Post('optimize')
-  @ApiOperation({
-    summary: '🎯 Vollautomatische Keyword-Optimierung',
-    description:
-      'Führt eine vollständige Keyword-Optimierung durch:\n' +
-      '- Fügt negative Keywords hinzu (schlechte Performance)\n' +
-      '- Erstellt positive Keywords (gute Performance)\n' +
-      '- Pausiert schlecht performende Keywords\n' +
-      '- Passt Gebote automatisch an',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Optimierung erfolgreich durchgeführt',
-    schema: {
-      example: {
-        negativeKeywordsAdded: 15,
-        positiveKeywordsAdded: 8,
-        keywordsPaused: 5,
-        bidsAdjusted: 23,
-      },
-    },
-  })
-  async optimizeKeywords() {
-    return this.keywordsService.optimizeAllKeywords();
-  }
+  constructor(private readonly amazonApi: AmazonApiClient) {}
 
-  @Get('history')
-  @ApiOperation({
-    summary: '📊 Optimierungs-Historie abrufen',
-    description: 'Zeigt alle Keyword-Optimierungen der letzten X Tage',
-  })
-  @ApiQuery({
-    name: 'days',
-    required: false,
-    type: Number,
-    description: 'Anzahl Tage (Standard: 30)',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Optimierungs-Historie erfolgreich abgerufen',
-  })
-  async getHistory(@Query('days') days?: string) {
-    const numDays = days ? parseInt(days, 10) : 30;
-    return this.keywordsService.getOptimizationHistory(numDays);
+  @Get()
+  @ApiOperation({ summary: 'Get all keywords from Amazon Ads API' })
+  @ApiResponse({ status: 200, description: 'Returns all keywords directly from Amazon' })
+  async findAll() {
+    try {
+      this.logger.log('📊 Fetching keywords from Amazon API...');
+      
+      // Fetch keywords directly from Amazon API
+      const keywords = await this.amazonApi.get<any[]>('/sp/keywords');
+      
+      this.logger.log(`✅ Found ${keywords.length} keywords`);
+      
+      return {
+        success: true,
+        count: keywords.length,
+        keywords: keywords,
+        metadata: {
+          timestamp: new Date().toISOString(),
+          source: 'Amazon Advertising API v3',
+          note: 'Data fetched directly from Amazon (no database)'
+        }
+      };
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch keywords:', error.message);
+      return {
+        success: false,
+        error: error.message,
+        keywords: [],
+        hint: 'Check your Amazon API credentials'
+      };
+    }
   }
 }

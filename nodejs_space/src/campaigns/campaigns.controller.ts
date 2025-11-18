@@ -1,55 +1,111 @@
 
-import { Controller, Get, Param, Post, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { CampaignsService } from './campaigns.service';
+import { Controller, Get, Param, Post, Put, Body, Logger } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { AmazonApiClient } from '../amazon-auth/amazon-api.client';
 
 @ApiTags('campaigns')
 @Controller('campaigns')
 export class CampaignsController {
-  constructor(private readonly campaignsService: CampaignsService) {}
+  private readonly logger = new Logger(CampaignsController.name);
+
+  constructor(private readonly amazonApi: AmazonApiClient) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all campaigns' })
-  @ApiResponse({ status: 200, description: 'Returns all campaigns from database' })
+  @ApiOperation({ summary: 'Get all campaigns from Amazon Ads API' })
+  @ApiResponse({ status: 200, description: 'Returns all campaigns directly from Amazon' })
   async findAll() {
-    return this.campaignsService.findAll();
+    try {
+      this.logger.log('📊 Fetching campaigns from Amazon API...');
+      
+      // Fetch campaigns directly from Amazon API (v3)
+      const campaigns = await this.amazonApi.get<any[]>('/sp/campaigns');
+      
+      this.logger.log(`✅ Found ${campaigns.length} campaigns`);
+      
+      return {
+        success: true,
+        count: campaigns.length,
+        campaigns: campaigns,
+        metadata: {
+          timestamp: new Date().toISOString(),
+          source: 'Amazon Advertising API v3',
+          note: 'Data fetched directly from Amazon (no database)'
+        }
+      };
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch campaigns:', error.message);
+      return {
+        success: false,
+        error: error.message,
+        campaigns: [],
+        hint: 'Check your Amazon API credentials and AMAZON_ADVERTISING_ACCOUNT_ID in Railway'
+      };
+    }
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get a single campaign by ID' })
-  @ApiParam({ name: 'id', description: 'Campaign UUID from database' })
+  @Get(':campaignId')
+  @ApiOperation({ summary: 'Get a single campaign by Amazon campaign ID' })
+  @ApiParam({ name: 'campaignId', description: 'Amazon campaign ID' })
   @ApiResponse({ status: 200, description: 'Returns campaign details' })
   @ApiResponse({ status: 404, description: 'Campaign not found' })
-  async findOne(@Param('id') id: string) {
-    return this.campaignsService.findOne(id);
+  async findOne(@Param('campaignId') campaignId: string) {
+    try {
+      this.logger.log(`📊 Fetching campaign ${campaignId}...`);
+      const campaign = await this.amazonApi.get<any>(`/sp/campaigns/${campaignId}`);
+      
+      return {
+        success: true,
+        campaign,
+        metadata: {
+          timestamp: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      this.logger.error(`Failed to fetch campaign ${campaignId}:`, error.message);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
   }
 
-  @Get(':id/performance')
-  @ApiOperation({ summary: 'Get performance metrics for a campaign' })
-  @ApiParam({ name: 'id', description: 'Campaign UUID from database' })
-  @ApiQuery({ name: 'days', required: false, description: 'Number of days to fetch (default: 30)' })
-  @ApiResponse({ status: 200, description: 'Returns aggregated performance metrics' })
-  @ApiResponse({ status: 404, description: 'Campaign not found' })
-  async getPerformance(@Param('id') id: string, @Query('days') days?: string) {
-    const daysNumber = days ? parseInt(days, 10) : 30;
-    return this.campaignsService.getPerformanceMetrics(id, daysNumber);
-  }
+  @Put(':campaignId')
+  @ApiOperation({ summary: 'Update a campaign on Amazon' })
+  @ApiParam({ name: 'campaignId', description: 'Amazon campaign ID' })
+  @ApiResponse({ status: 200, description: 'Campaign updated successfully' })
+  async updateCampaign(
+    @Param('campaignId') campaignId: string,
+    @Body() updates: { state?: string; budget?: number },
+  ) {
+    try {
+      this.logger.log(`📝 Updating campaign ${campaignId}...`);
+      
+      const amazonUpdates: any = {};
+      if (updates.state) {
+        amazonUpdates.state = updates.state;
+      }
+      if (updates.budget) {
+        amazonUpdates.budget = {
+          budget: updates.budget,
+          budgetType: 'DAILY'
+        };
+      }
 
-  @Post('sync')
-  @ApiOperation({ summary: 'Sync campaigns from Amazon Advertising API' })
-  @ApiResponse({ status: 200, description: 'Campaigns synced successfully' })
-  @ApiResponse({ status: 500, description: 'Failed to sync campaigns' })
-  async syncCampaigns() {
-    await this.campaignsService.syncCampaignsFromAmazon();
-    return { message: 'Campaigns synced successfully', timestamp: new Date() };
-  }
-
-  @Post('sync-metrics')
-  @ApiOperation({ summary: 'Sync performance metrics from Amazon' })
-  @ApiResponse({ status: 200, description: 'Metrics synced successfully' })
-  @ApiResponse({ status: 500, description: 'Failed to sync metrics' })
-  async syncMetrics() {
-    await this.campaignsService.syncPerformanceMetrics();
-    return { message: 'Performance metrics synced successfully', timestamp: new Date() };
+      const result = await this.amazonApi.put(`/sp/campaigns/${campaignId}`, amazonUpdates);
+      
+      this.logger.log(`✅ Campaign ${campaignId} updated successfully`);
+      
+      return {
+        success: true,
+        message: 'Campaign updated successfully',
+        result
+      };
+    } catch (error) {
+      this.logger.error(`Failed to update campaign ${campaignId}:`, error.message);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
   }
 }
