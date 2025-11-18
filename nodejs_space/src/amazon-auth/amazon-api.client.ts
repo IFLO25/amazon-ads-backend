@@ -51,7 +51,16 @@ export class AmazonApiClient {
 
         // Add access token
         const accessToken = await this.authService.getAccessToken();
+        
+        this.logger.debug(`🔐 Access Token for request: ${accessToken ? accessToken.substring(0, 20) + '...' : '❌ EMPTY/UNDEFINED'}`);
+        
+        if (!accessToken) {
+          this.logger.error('❌ CRITICAL: Access Token is empty or undefined!');
+          throw new Error('No access token available');
+        }
+        
         config.headers.Authorization = `Bearer ${accessToken}`;
+        this.logger.debug(`📝 Authorization Header: Bearer ${accessToken.substring(0, 20)}...`);
 
         // Get and add profile ID (only for non-profile requests)
         if (!config.url?.includes('/v2/profiles')) {
