@@ -97,4 +97,34 @@ export class AmazonAuthController {
       );
     }
   }
+
+  @Get('debug-token')
+  @ApiOperation({ 
+    summary: 'Debug access token (shows first 50 characters)',
+    description: 'Shows the current access token for debugging purposes'
+  })
+  async debugToken() {
+    try {
+      const accessToken = await this.amazonAuthService.getAccessToken();
+      return {
+        success: true,
+        tokenPreview: accessToken.substring(0, 50) + '...',
+        tokenLength: accessToken.length,
+        hasWhitespace: /\s/.test(accessToken),
+        hasNewlines: /\n/.test(accessToken),
+        startsWithBearer: accessToken.startsWith('Bearer '),
+        firstChar: accessToken.charCodeAt(0),
+        lastChar: accessToken.charCodeAt(accessToken.length - 1)
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message || 'Failed to get access token',
+          error: error.response?.data || error.message
+        },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
 }
