@@ -110,6 +110,67 @@ export class DebugController {
     }
   }
 
+  @Get('test-headers')
+  @ApiOperation({ summary: 'Show exact headers being sent to Amazon' })
+  @ApiResponse({ status: 200, description: 'Returns header details' })
+  async testHeaders() {
+    try {
+      const axios = require('axios');
+      const accessToken = await this.amazonAuth.getAccessToken();
+      const clientId = process.env.AMAZON_CLIENT_ID;
+      const profileId = process.env.AMAZON_PROFILE_ID;
+      
+      const headers = {
+        'Authorization': `Bearer ${accessToken}`,
+        'Amazon-Advertising-API-ClientId': clientId,
+        'Amazon-Advertising-API-Scope': String(profileId),
+        'Content-Type': 'application/json'
+      };
+      
+      // Test with exact headers
+      let testResult = null;
+      try {
+        const response = await axios.get('https://advertising-api-eu.amazon.com/sp/campaigns', {
+          headers: headers
+        });
+        testResult = {
+          success: true,
+          campaignCount: response.data.length
+        };
+      } catch (error) {
+        testResult = {
+          success: false,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          error: error.response?.data,
+          requestHeaders: error.config?.headers
+        };
+      }
+      
+      return {
+        sentHeaders: {
+          'Authorization': `Bearer ${accessToken.substring(0, 30)}... (length: ${accessToken.length})`,
+          'Amazon-Advertising-API-ClientId': clientId.substring(0, 30) + '...',
+          'Amazon-Advertising-API-Scope': profileId,
+          'Content-Type': 'application/json'
+        },
+        fullAuthToken: {
+          length: accessToken.length,
+          startsWidth: accessToken.substring(0, 10),
+          endsWidth: accessToken.substring(accessToken.length - 10),
+          hasWhitespace: accessToken !== accessToken.trim(),
+          hasNewlines: accessToken.includes('\n') || accessToken.includes('\r')
+        },
+        testResult
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
   @Get('test-all-profiles')
   @ApiOperation({ summary: 'Test /sp/campaigns with all available profile IDs' })
   @ApiResponse({ status: 200, description: 'Returns test results for each profile' })

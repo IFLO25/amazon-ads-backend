@@ -61,11 +61,14 @@ export class AmazonAuthService {
         },
       );
 
-      this.accessToken = response.data.access_token;
+      // IMPORTANT: Trim whitespace from access token to avoid encoding issues
+      this.accessToken = response.data.access_token.trim();
       const expiresIn = response.data.expires_in || 3600;
       this.tokenExpiry = new Date(Date.now() + expiresIn * 1000);
 
       this.logger.log(`✅ Access token refreshed (expires in ${expiresIn}s)`);
+      this.logger.log(`   Token length: ${this.accessToken.length} characters`);
+      this.logger.log(`   Token starts with: ${this.accessToken.substring(0, 10)}...`);
     } catch (error) {
       this.logger.error('❌ Failed to refresh access token:', error.response?.data || error.message);
       throw new Error('Failed to refresh Amazon API access token');
