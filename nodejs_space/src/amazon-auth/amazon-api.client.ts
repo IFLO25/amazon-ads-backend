@@ -62,12 +62,15 @@ export class AmazonApiClient {
         config.headers.Authorization = `Bearer ${accessToken}`;
         this.logger.log(`📝 Authorization Header: Bearer ${accessToken.substring(0, 30)}...`);
 
-        // Get and add profile ID (only for non-profile requests)
+        // Get and add Amazon-Advertising-API-Scope (Account ID or Profile ID)
         if (!config.url?.includes('/v2/profiles')) {
-          const profileId = await this.getProfileId();
-          if (profileId) {
-            config.headers['Amazon-Advertising-API-Scope'] = profileId;
-            this.logger.log(`🔑 Using Profile ID: ${profileId}`);
+          // Use Account ID directly from environment variables
+          const apiScope = this.configService.get<string>('amazon.advertisingAccountId');
+          if (apiScope) {
+            config.headers['Amazon-Advertising-API-Scope'] = apiScope;
+            this.logger.log(`🎯 Using API Scope (Account ID): ${apiScope}`);
+          } else {
+            this.logger.error('❌ AMAZON_ADVERTISING_ACCOUNT_ID not set!');
           }
         }
 
