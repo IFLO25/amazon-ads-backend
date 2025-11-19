@@ -127,4 +127,42 @@ export class AmazonAuthController {
       );
     }
   }
+
+  @Get('test-amazon-api')
+  @ApiOperation({ 
+    summary: 'Test Amazon API directly with current token',
+    description: 'Makes a direct call to Amazon Ads API to test authentication'
+  })
+  async testAmazonApi() {
+    try {
+      const axios = require('axios');
+      const accessToken = await this.amazonAuthService.getAccessToken();
+      const clientId = process.env.AMAZON_CLIENT_ID;
+      
+      // Test /v2/profiles endpoint
+      const response = await axios.get('https://advertising-api-eu.amazon.com/v2/profiles', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Amazon-Advertising-API-ClientId': clientId,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      return {
+        success: true,
+        message: 'Amazon API responded successfully',
+        profileCount: response.data.length,
+        firstProfile: response.data[0]
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Amazon API call failed',
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        error: error.response?.data || error.message,
+        headers: error.config?.headers
+      };
+    }
+  }
 }
