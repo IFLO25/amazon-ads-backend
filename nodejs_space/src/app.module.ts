@@ -26,6 +26,7 @@ import { ProtectionModule } from './protection/protection.module';
 import { KeywordResearchModule } from './keyword-research/keyword-research.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { OAuthModule } from './oauth/oauth.module';
 
 @Module({
   imports: [
@@ -53,6 +54,8 @@ import { SchedulerModule } from './scheduler/scheduler.module';
     DashboardModule,
     // 🔥 24/7 AUTOMATISCHE OPTIMIERUNG
     SchedulerModule,
+    // 🔐 OAUTH TOKEN GENERATION
+    OAuthModule,
   ],
   controllers: [AppController, ConfigController, StatusController],
   providers: [AppService],
