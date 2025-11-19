@@ -9,6 +9,7 @@ export default () => ({
     refreshToken: process.env.AMAZON_REFRESH_TOKEN,
     // Use AMAZON_ADVERTISING_API_SCOPE first, fallback to AMAZON_ADVERTISING_ACCOUNT_ID
     advertisingAccountId: process.env.AMAZON_ADVERTISING_API_SCOPE || process.env.AMAZON_ADVERTISING_ACCOUNT_ID,
+    profileId: process.env.AMAZON_PROFILE_ID,
     marketplace: process.env.AMAZON_MARKETPLACE || 'EU',
     sellerId: process.env.AMAZON_SELLER_ID,
     apiEndpoint: 'https://advertising-api-eu.amazon.com',

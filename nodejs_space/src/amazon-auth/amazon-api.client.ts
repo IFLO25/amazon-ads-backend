@@ -21,14 +21,17 @@ export class AmazonApiClient {
     const apiEndpoint = this.configService.get<string>('amazon.apiEndpoint');
     const clientId = this.configService.get<string>('amazon.clientId');
     const accountId = this.configService.get<string>('amazon.advertisingAccountId');
+    const profileId = this.configService.get<string>('amazon.profileId');
 
     this.logger.log('🔧 Initializing Amazon API Client...');
     this.logger.log(`   - API Endpoint: ${apiEndpoint}`);
     this.logger.log(`   - Client ID: ${clientId ? clientId.substring(0, 10) + '...' : '❌ MISSING'}`);
-    this.logger.log(`   - API Scope (from env): ${accountId ? accountId : '❌ MISSING'}`);
+    this.logger.log(`   - Profile ID: ${profileId ? profileId : '❌ MISSING'}`);
+    this.logger.log(`   - Account ID: ${accountId ? accountId : '❌ MISSING'}`);
     
     // Log the actual environment variables to debug
     this.logger.log('🔍 Environment Variables Debug:');
+    this.logger.log(`   - AMAZON_PROFILE_ID: ${process.env.AMAZON_PROFILE_ID ? '✅ SET' : '❌ MISSING'}`);
     this.logger.log(`   - AMAZON_ADVERTISING_API_SCOPE: ${process.env.AMAZON_ADVERTISING_API_SCOPE ? '✅ SET' : '❌ MISSING'}`);
     this.logger.log(`   - AMAZON_ADVERTISING_ACCOUNT_ID: ${process.env.AMAZON_ADVERTISING_ACCOUNT_ID ? '✅ SET' : '❌ MISSING'}`);
 
@@ -67,15 +70,20 @@ export class AmazonApiClient {
         config.headers.Authorization = `Bearer ${accessToken}`;
         this.logger.log(`📝 Authorization Header: Bearer ${accessToken.substring(0, 30)}...`);
 
-        // Get and add Amazon-Advertising-API-Scope (Account ID or Profile ID)
+        // Get and add Amazon-Advertising-API-Scope (Profile ID or Account ID)
         if (!config.url?.includes('/v2/profiles')) {
-          // Use Account ID directly from environment variables
-          const apiScope = this.configService.get<string>('amazon.advertisingAccountId');
-          if (apiScope) {
-            config.headers['Amazon-Advertising-API-Scope'] = apiScope;
-            this.logger.log(`🎯 Using API Scope (Account ID): ${apiScope}`);
+          // Try Profile ID first (required for most SP endpoints)
+          const profileId = this.configService.get<string>('amazon.profileId');
+          const accountId = this.configService.get<string>('amazon.advertisingAccountId');
+          
+          if (profileId) {
+            config.headers['Amazon-Advertising-API-Scope'] = profileId;
+            this.logger.log(`🎯 Using Profile ID in API Scope: ${profileId}`);
+          } else if (accountId) {
+            config.headers['Amazon-Advertising-API-Scope'] = accountId;
+            this.logger.log(`🎯 Using Account ID in API Scope: ${accountId}`);
           } else {
-            this.logger.error('❌ AMAZON_ADVERTISING_ACCOUNT_ID not set!');
+            this.logger.error('❌ Neither AMAZON_PROFILE_ID nor AMAZON_ADVERTISING_ACCOUNT_ID is set!');
           }
         }
 
