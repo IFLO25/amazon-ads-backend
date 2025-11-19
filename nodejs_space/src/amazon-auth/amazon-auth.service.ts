@@ -79,8 +79,30 @@ export class AmazonAuthService {
   }
 
   async getProfiles(): Promise<any[]> {
-    this.logger.warn('getProfiles called but not implemented in MVP');
-    return [];
+    try {
+      // Get access token first
+      const accessToken = await this.getAccessToken();
+      const clientId = this.configService.get<string>('AMAZON_CLIENT_ID');
+
+      // Call Amazon Ads API /v2/profiles endpoint
+      // Note: This endpoint should NOT use the Amazon-Advertising-API-Scope header
+      const response = await axios.get(
+        'https://advertising-api-eu.amazon.com/v2/profiles',
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Amazon-Advertising-API-ClientId': clientId,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      this.logger.log(`✅ Fetched ${response.data.length} profiles from Amazon API`);
+      return response.data;
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch profiles:', error.response?.data || error.message);
+      throw error;
+    }
   }
 
   isConfigured(): boolean {
