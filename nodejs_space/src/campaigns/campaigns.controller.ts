@@ -159,6 +159,101 @@ export class CampaignsController {
     }
   }
 
+  @Get('test-token')
+  @ApiOperation({ summary: 'Test if access token is valid and show token details' })
+  @ApiResponse({ status: 200, description: 'Returns token test results' })
+  async testToken() {
+    try {
+      const axios = require('axios');
+      
+      // Get the access token
+      let accessToken;
+      let tokenError = null;
+      try {
+        accessToken = await this.amazonAuth.getAccessToken();
+      } catch (error) {
+        tokenError = error.message;
+      }
+      
+      const clientId = process.env.AMAZON_CLIENT_ID;
+      const profileId = process.env.AMAZON_PROFILE_ID;
+      
+      // Test 1: Can we get profiles?
+      let profilesTest = null;
+      try {
+        const response = await axios.get('https://advertising-api-eu.amazon.com/v2/profiles', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Amazon-Advertising-API-ClientId': clientId,
+            'Content-Type': 'application/json'
+          }
+        });
+        profilesTest = {
+          success: true,
+          profileCount: response.data.length
+        };
+      } catch (error) {
+        profilesTest = {
+          success: false,
+          status: error.response?.status,
+          error: error.response?.data,
+          fullError: error.message
+        };
+      }
+      
+      // Test 2: Can we get campaigns with current profile?
+      let campaignsTest = null;
+      try {
+        const response = await axios.get('https://advertising-api-eu.amazon.com/sp/campaigns', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Amazon-Advertising-API-ClientId': clientId,
+            'Amazon-Advertising-API-Scope': String(profileId),
+            'Content-Type': 'application/json'
+          }
+        });
+        campaignsTest = {
+          success: true,
+          campaignCount: response.data.length
+        };
+      } catch (error) {
+        campaignsTest = {
+          success: false,
+          status: error.response?.status,
+          error: error.response?.data,
+          fullError: error.message
+        };
+      }
+      
+      return {
+        tokenStatus: {
+          hasToken: !!accessToken,
+          tokenLength: accessToken?.length || 0,
+          tokenError: tokenError,
+          tokenPreview: accessToken ? accessToken.substring(0, 30) + '...' : null
+        },
+        config: {
+          clientId: clientId.substring(0, 20) + '...',
+          profileId: profileId,
+          refreshToken: process.env.AMAZON_REFRESH_TOKEN ? 'Set (length: ' + process.env.AMAZON_REFRESH_TOKEN.length + ')' : 'Not set'
+        },
+        tests: {
+          profilesEndpoint: profilesTest,
+          campaignsEndpoint: campaignsTest
+        },
+        conclusion: profilesTest?.success 
+          ? 'Token is valid - Profile ID or permissions issue'
+          : 'Token is invalid or expired - Need new refresh token'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        stack: error.stack
+      };
+    }
+  }
+
   @Get('test-all-profiles')
   @ApiOperation({ summary: 'Test /sp/campaigns with all available profile IDs' })
   @ApiResponse({ status: 200, description: 'Returns test results for each profile' })
