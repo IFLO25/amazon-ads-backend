@@ -65,4 +65,30 @@ export class AmazonAuthService {
       throw new Error('Failed to refresh Amazon API access token');
     }
   }
+
+  // Stub methods for compatibility with controllers
+  async exchangeCodeForToken(code: string): Promise<any> {
+    this.logger.warn('exchangeCodeForToken called but not implemented in MVP');
+    throw new Error('Not implemented in MVP version');
+  }
+
+  async getProfiles(): Promise<any[]> {
+    this.logger.warn('getProfiles called but not implemented in MVP');
+    return [];
+  }
+
+  isConfigured(): boolean {
+    const clientId = this.configService.get<string>('AMAZON_CLIENT_ID');
+    const clientSecret = this.configService.get<string>('AMAZON_CLIENT_SECRET');
+    const refreshToken = this.configService.get<string>('AMAZON_REFRESH_TOKEN');
+    return !!(clientId && clientSecret && refreshToken);
+  }
+
+  getConfigStatus(): any {
+    return {
+      configured: this.isConfigured(),
+      hasAccessToken: !!this.accessToken,
+      tokenExpiry: this.tokenExpiry,
+    };
+  }
 }

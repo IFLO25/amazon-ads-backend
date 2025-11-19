@@ -66,4 +66,16 @@ export class CampaignsService {
     const campaigns = await this.getAllCampaigns();
     return campaigns.find((c: any) => c.campaignId === id);
   }
+
+  // Stub methods for compatibility with optimization service
+  async syncCampaignsFromAmazon(): Promise<any> {
+    this.logger.warn('syncCampaignsFromAmazon called but not implemented in MVP');
+    const campaigns = await this.getAllCampaigns();
+    return { synced: campaigns.length, campaigns };
+  }
+
+  async syncPerformanceMetrics(): Promise<any> {
+    this.logger.warn('syncPerformanceMetrics called but not implemented in MVP');
+    return { message: 'Not implemented in MVP version' };
+  }
 }
