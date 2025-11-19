@@ -38,7 +38,7 @@ export class CampaignsController {
         success: false,
         error: error.message,
         campaigns: [],
-        hint: 'Check your Amazon API credentials and AMAZON_ADVERTISING_ACCOUNT_ID in Railway'
+        hint: 'Check your Amazon API credentials and AMAZON_PROFILE_ID in Railway environment variables'
       };
     }
   }

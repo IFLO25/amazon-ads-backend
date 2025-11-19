@@ -23,17 +23,7 @@ export class AmazonApiClient {
     const accountId = this.configService.get<string>('amazon.advertisingAccountId');
     const profileId = this.configService.get<string>('amazon.profileId');
 
-    this.logger.log('🔧 Initializing Amazon API Client...');
-    this.logger.log(`   - API Endpoint: ${apiEndpoint}`);
-    this.logger.log(`   - Client ID: ${clientId ? clientId.substring(0, 10) + '...' : '❌ MISSING'}`);
-    this.logger.log(`   - Profile ID: ${profileId ? profileId : '❌ MISSING'}`);
-    this.logger.log(`   - Account ID: ${accountId ? accountId : '❌ MISSING'}`);
-    
-    // Log the actual environment variables to debug
-    this.logger.log('🔍 Environment Variables Debug:');
-    this.logger.log(`   - AMAZON_PROFILE_ID: ${process.env.AMAZON_PROFILE_ID ? '✅ SET' : '❌ MISSING'}`);
-    this.logger.log(`   - AMAZON_ADVERTISING_API_SCOPE: ${process.env.AMAZON_ADVERTISING_API_SCOPE ? '✅ SET' : '❌ MISSING'}`);
-    this.logger.log(`   - AMAZON_ADVERTISING_ACCOUNT_ID: ${process.env.AMAZON_ADVERTISING_ACCOUNT_ID ? '✅ SET' : '❌ MISSING'}`);
+    this.logger.log(`🔧 Amazon API Client initialized (${apiEndpoint})`);
 
     if (!clientId) {
       this.logger.error('❌ AMAZON_CLIENT_ID is not set!');
@@ -60,15 +50,12 @@ export class AmazonApiClient {
         // Add access token
         const accessToken = await this.authService.getAccessToken();
         
-        this.logger.log(`🔐 Access Token for request: ${accessToken ? accessToken.substring(0, 30) + '...' : '❌ EMPTY/UNDEFINED'}`);
-        
         if (!accessToken) {
-          this.logger.error('❌ CRITICAL: Access Token is empty or undefined!');
+          this.logger.error('❌ Access Token is empty!');
           throw new Error('No access token available');
         }
         
         config.headers.Authorization = `Bearer ${accessToken}`;
-        this.logger.log(`📝 Authorization Header: Bearer ${accessToken.substring(0, 30)}...`);
 
         // Get and add Amazon-Advertising-API-Scope (Profile ID or Account ID)
         if (!config.url?.includes('/v2/profiles')) {
@@ -78,17 +65,15 @@ export class AmazonApiClient {
           
           if (profileId) {
             config.headers['Amazon-Advertising-API-Scope'] = profileId;
-            this.logger.log(`🎯 Using Profile ID in API Scope: ${profileId}`);
           } else if (accountId) {
             config.headers['Amazon-Advertising-API-Scope'] = accountId;
-            this.logger.log(`🎯 Using Account ID in API Scope: ${accountId}`);
           } else {
             this.logger.error('❌ Neither AMAZON_PROFILE_ID nor AMAZON_ADVERTISING_ACCOUNT_ID is set!');
           }
         }
 
-        this.logger.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`);
-        this.logger.log(`   Headers: ClientId=${config.headers['Amazon-Advertising-API-ClientId'] ? 'SET' : 'MISSING'}, Scope=${config.headers['Amazon-Advertising-API-Scope'] || 'MISSING'}`);
+        // Only log the request method and URL (no verbose headers)
+        this.logger.log(`🌐 ${config.method?.toUpperCase()} ${config.url}`);
         return config;
       },
       (error) => {
@@ -100,31 +85,20 @@ export class AmazonApiClient {
     // Response interceptor for error handling
     this.axiosInstance.interceptors.response.use(
       (response) => {
-        this.logger.debug(`✅ API Response: ${response.status} ${response.config.url}`);
+        // Only log if not successful (reduce log spam)
         return response;
       },
       async (error) => {
         const status = error.response?.status;
         const url = error.config?.url;
-        const errorData = error.response?.data;
+        const errorMessage = error.response?.data?.message || error.response?.data?.details || error.message;
 
-        if (status === 401) {
-          this.logger.error(`❌ Unauthorized (401) - ${url}`);
-          this.logger.error('   Token may be invalid or expired');
-        } else if (status === 429) {
-          this.logger.warn(`⚠️ Rate limit exceeded (429) - ${url}`);
-          this.logger.warn('   Waiting 60 seconds before retry...');
+        // Consolidated error logging (one line per error)
+        this.logger.error(`❌ ${status} ${url} - ${errorMessage}`);
+
+        if (status === 429) {
           await this.sleep(60000);
           return this.axiosInstance.request(error.config);
-        } else if (status >= 500) {
-          this.logger.error(`❌ Server error (${status}) - ${url}`);
-          this.logger.error(`   Response: ${JSON.stringify(errorData)}`);
-        } else if (status) {
-          this.logger.error(`❌ API Error (${status}) - ${url}`);
-          this.logger.error(`   Details: ${JSON.stringify(errorData)}`);
-        } else {
-          this.logger.error(`❌ Network/Unknown error - ${url}`);
-          this.logger.error(`   ${error.message}`);
         }
 
         return Promise.reject(error);

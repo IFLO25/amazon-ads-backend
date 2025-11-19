@@ -170,7 +170,7 @@ export class ConfigController {
           accountType: p.accountType,
         })),
         currentProfileId: this.config.get<string>('amazon.advertisingAccountId'),
-        hint: 'Update AMAZON_ADVERTISING_ACCOUNT_ID in Railway with the correct profileId from the list above',
+        hint: 'Update AMAZON_PROFILE_ID in Railway with the correct profileId from the list above',
         timestamp: new Date().toISOString(),
       };
     } catch (error) {

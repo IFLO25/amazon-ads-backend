@@ -47,25 +47,16 @@ async function bootstrap() {
   // Log environment variables status (without revealing actual values)
   const configService = app.get(ConfigService);
   logger.log('='.repeat(60));
-  logger.log('🚀 Amazon Advertising Automation Service STARTED');
-  logger.log('='.repeat(60));
-  logger.log(`📍 Port: ${port}`);
-  logger.log(`📚 Swagger Docs: http://localhost:${port}/api-docs`);
-  logger.log(`🌐 API Base: http://localhost:${port}/api`);
-  logger.log('='.repeat(60));
-  logger.log('🔐 Environment Variables Status:');
-  logger.log(`   - AMAZON_CLIENT_ID: ${configService.get('amazon.clientId') ? '✅ Set' : '❌ Missing'}`);
-  logger.log(`   - AMAZON_CLIENT_SECRET: ${configService.get('amazon.clientSecret') ? '✅ Set' : '❌ Missing'}`);
-  logger.log(`   - AMAZON_REFRESH_TOKEN: ${configService.get('amazon.refreshToken') ? '✅ Set' : '❌ Missing'}`);
-  logger.log(`   - AMAZON_ADVERTISING_ACCOUNT_ID: ${configService.get('amazon.advertisingAccountId') ? '✅ Set' : '❌ Missing'}`);
-  logger.log(`   - DATABASE_URL: ${configService.get('database.url') ? '✅ Set' : '❌ Missing'}`);
-  logger.log('='.repeat(60));
-  logger.log('🎯 Routes:');
-  logger.log('   - GET  /api/campaigns');
-  logger.log('   - POST /api/campaigns/sync');
-  logger.log('   - GET  /api/keywords');
-  logger.log('   - POST /api/optimize/run');
-  logger.log('='.repeat(60));
+  logger.log(`🚀 Amazon Advertising Service started on port ${port}`);
+  logger.log(`📚 Swagger: http://localhost:${port}/api-docs`);
+  
+  // Check critical env vars
+  const clientId = configService.get('amazon.clientId');
+  const profileId = configService.get('amazon.profileId');
+  
+  if (!clientId || !profileId) {
+    logger.error('❌ Missing critical environment variables!');
+  }
 }
 
 bootstrap();
