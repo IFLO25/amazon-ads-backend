@@ -1,9 +1,9 @@
 
 import { Controller, Get, Query, Res, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Response } from 'express';
-import axios from 'axios';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse } from '@nestjs/swagger';
+import type { Response } from 'express';
+const axios = require('axios');
 
 @ApiTags('OAuth')
 @Controller('oauth')
@@ -14,7 +14,7 @@ export class OAuthController {
 
   @Get('start')
   @ApiOperation({ summary: 'Start OAuth flow to get new refresh token' })
-  @ApiResponse({ status: 302, description: 'Redirects to Amazon authorization' })
+  @SwaggerApiResponse({ status: 302, description: 'Redirects to Amazon authorization' })
   startOAuth(@Res() res: Response) {
     const clientId = this.configService.get<string>('AMAZON_CLIENT_ID');
     const redirectUri = `${this.configService.get<string>('BACKEND_URL') || 'https://amazon-ads-backend-production.up.railway.app'}/oauth/callback`;
@@ -34,7 +34,7 @@ export class OAuthController {
 
   @Get('callback')
   @ApiOperation({ summary: 'OAuth callback - receives authorization code' })
-  @ApiResponse({ status: 200, description: 'Returns the new refresh token' })
+  @SwaggerApiResponse({ status: 200, description: 'Returns the new refresh token' })
   async handleCallback(@Query('code') code: string, @Res() res: Response) {
     if (!code) {
       this.logger.error('❌ No authorization code received');
