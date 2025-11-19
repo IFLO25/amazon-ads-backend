@@ -21,10 +21,49 @@ export class CampaignsController {
     try {
       this.logger.log('📊 Fetching campaigns from Amazon API...');
       
-      // Fetch campaigns directly from Amazon API (v2)
-      const campaigns = await this.amazonApi.get<any[]>('/v2/sp/campaigns');
+      // Use axios directly like the working code
+      const axios = require('axios');
+      const accessToken = await this.amazonAuth.getAccessToken();
+      const clientId = process.env.AMAZON_CLIENT_ID;
+      const profileId = process.env.AMAZON_PROFILE_ID;
       
-      this.logger.log(`✅ Found ${campaigns.length} campaigns`);
+      // Try multiple endpoints
+      const endpointsToTry = [
+        { url: 'https://advertising-api-eu.amazon.com/v3/sp/campaigns', name: 'v3: /v3/sp/campaigns' },
+        { url: 'https://advertising-api-eu.amazon.com/sp/campaigns', name: 'v3: /sp/campaigns' },
+        { url: 'https://advertising-api-eu.amazon.com/v2/sp/campaigns', name: 'v2: /v2/sp/campaigns' }
+      ];
+      
+      let campaigns = null;
+      let successEndpoint = null;
+      
+      for (const testEndpoint of endpointsToTry) {
+        try {
+          this.logger.log(`🧪 Testing: ${testEndpoint.name}`);
+          
+          const response = await axios.get(testEndpoint.url, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Amazon-Advertising-API-ClientId': clientId,
+              'Amazon-Advertising-API-Scope': String(profileId),
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          campaigns = response.data;
+          successEndpoint = testEndpoint.name;
+          this.logger.log(`✅ SUCCESS with ${testEndpoint.name}!`);
+          break;
+        } catch (err) {
+          this.logger.warn(`❌ ${testEndpoint.name} failed: ${err.response?.status}`);
+        }
+      }
+      
+      if (!campaigns) {
+        throw new Error('All endpoints failed');
+      }
+      
+      this.logger.log(`✅ Found ${campaigns.length} campaigns using ${successEndpoint}`);
       
       return {
         success: true,
@@ -32,7 +71,7 @@ export class CampaignsController {
         campaigns: campaigns,
         metadata: {
           timestamp: new Date().toISOString(),
-          source: 'Amazon Advertising API v3',
+          endpoint: successEndpoint,
           note: 'Data fetched directly from Amazon (no database)'
         }
       };
@@ -55,7 +94,40 @@ export class CampaignsController {
   async findOne(@Param('campaignId') campaignId: string) {
     try {
       this.logger.log(`📊 Fetching campaign ${campaignId}...`);
-      const campaign = await this.amazonApi.get<any>(`/sp/campaigns/${campaignId}`);
+      
+      const axios = require('axios');
+      const accessToken = await this.amazonAuth.getAccessToken();
+      const clientId = process.env.AMAZON_CLIENT_ID;
+      const profileId = process.env.AMAZON_PROFILE_ID;
+      
+      const endpointsToTry = [
+        `https://advertising-api-eu.amazon.com/v3/sp/campaigns/${campaignId}`,
+        `https://advertising-api-eu.amazon.com/sp/campaigns/${campaignId}`,
+        `https://advertising-api-eu.amazon.com/v2/sp/campaigns/${campaignId}`
+      ];
+      
+      let campaign = null;
+      
+      for (const url of endpointsToTry) {
+        try {
+          const response = await axios.get(url, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Amazon-Advertising-API-ClientId': clientId,
+              'Amazon-Advertising-API-Scope': String(profileId),
+              'Content-Type': 'application/json'
+            }
+          });
+          campaign = response.data;
+          break;
+        } catch (err) {
+          continue;
+        }
+      }
+      
+      if (!campaign) {
+        throw new Error('Campaign not found');
+      }
       
       return {
         success: true,
