@@ -1,251 +1,69 @@
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { AmazonApiClient } from '../amazon-auth/amazon-api.client';
-
-interface AmazonCampaign {
-  campaignId: string;
-  name: string;
-  state: string;
-  budget: {
-    budget: number;
-    budgetType: string;
-  };
-  startDate: string;
-  endDate?: string;
-  targetingType: string;
-}
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { AmazonAuthService } from '../amazon-auth/amazon-auth.service';
+import axios from 'axios';
 
 @Injectable()
 export class CampaignsService {
   private readonly logger = new Logger(CampaignsService.name);
-  private campaignsCache: AmazonCampaign[] = []; // In-memory cache since no database
-  private lastSync: Date | null = null;
+  private readonly amazonApiUrl = 'https://advertising-api-eu.amazon.com';
+  private campaignsCache: any[] = [];
+  private cacheExpiry: Date | null = null;
 
   constructor(
-    private readonly amazonApi: AmazonApiClient,
+    private configService: ConfigService,
+    private amazonAuthService: AmazonAuthService,
   ) {}
 
-  /**
-   * Sync campaigns from Amazon Advertising API
-   */
-  async syncCampaignsFromAmazon(): Promise<void> {
-    try {
-      this.logger.log('🔄 Starting campaign sync from Amazon...');
-
-      // Fetch campaigns from Amazon API
-      const campaigns = await this.amazonApi.get<AmazonCampaign[]>('/sp/campaigns');
-
-      this.logger.log(`✅ Fetched ${campaigns.length} campaigns from Amazon`);
-
-      // Store in memory
-      this.campaignsCache = campaigns;
-      this.lastSync = new Date();
-
-      this.logger.log(`✅ Campaign sync completed! Last sync: ${this.lastSync.toISOString()}`);
-    } catch (error) {
-      this.logger.error('❌ Failed to sync campaigns from Amazon', error);
-      throw error;
+  async getAllCampaigns(): Promise<any[]> {
+    // Return cached campaigns if valid
+    if (this.campaignsCache.length > 0 && this.cacheExpiry && new Date() < this.cacheExpiry) {
+      this.logger.log('✅ Returning cached campaigns');
+      return this.campaignsCache;
     }
-  }
 
-  /**
-   * Get all campaigns
-   */
-  async getAllCampaigns() {
+    this.logger.log('📥 Fetching campaigns from Amazon API...');
+
     try {
-      // Auto-sync if cache is empty or stale (>5 minutes)
-      if (
-        this.campaignsCache.length === 0 ||
-        !this.lastSync ||
-        Date.now() - this.lastSync.getTime() > 5 * 60 * 1000
-      ) {
-        this.logger.log('📦 Cache empty or stale, syncing from Amazon...');
-        await this.syncCampaignsFromAmazon();
-      }
-
-      this.logger.log(`📊 Returning ${this.campaignsCache.length} campaigns from cache`);
-      return this.campaignsCache.map(campaign => ({
-        campaignId: campaign.campaignId,
-        name: campaign.name,
-        status: campaign.state,
-        budget: campaign.budget?.budget || 0,
-        budgetType: campaign.budget?.budgetType || 'DAILY',
-        startDate: campaign.startDate,
-        endDate: campaign.endDate,
-        targetingType: campaign.targetingType,
-      }));
-    } catch (error) {
-      this.logger.error('❌ Failed to get campaigns', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get campaign by ID
-   */
-  async getCampaignById(campaignId: string) {
-    try {
-      // Ensure cache is populated
-      if (this.campaignsCache.length === 0) {
-        await this.syncCampaignsFromAmazon();
-      }
-
-      const campaign = this.campaignsCache.find(c => c.campaignId === campaignId);
+      const accessToken = await this.amazonAuthService.getAccessToken();
+      const apiScope = this.configService.get<string>('AMAZON_ADVERTISING_API_SCOPE');
       
-      if (!campaign) {
-        throw new NotFoundException(`Campaign ${campaignId} not found`);
+      if (!apiScope) {
+        throw new Error('AMAZON_ADVERTISING_API_SCOPE not configured');
       }
 
-      return {
-        campaignId: campaign.campaignId,
-        name: campaign.name,
-        status: campaign.state,
-        budget: campaign.budget?.budget || 0,
-        budgetType: campaign.budget?.budgetType || 'DAILY',
-        startDate: campaign.startDate,
-        endDate: campaign.endDate,
-        targetingType: campaign.targetingType,
-      };
-    } catch (error) {
-      this.logger.error(`❌ Failed to get campaign ${campaignId}`, error);
-      throw error;
-    }
-  }
+      this.logger.log(`🎯 Using API Scope: ${apiScope.substring(0, 30)}...`);
 
-  /**
-   * Get campaigns summary statistics
-   */
-  async getCampaignsSummary() {
-    try {
-      // Ensure cache is populated
-      if (this.campaignsCache.length === 0) {
-        await this.syncCampaignsFromAmazon();
-      }
-
-      const total = this.campaignsCache.length;
-      const enabled = this.campaignsCache.filter(c => c.state === 'ENABLED').length;
-      const paused = this.campaignsCache.filter(c => c.state === 'PAUSED').length;
-      const archived = this.campaignsCache.filter(c => c.state === 'ARCHIVED').length;
-
-      return {
-        total,
-        enabled,
-        paused,
-        archived,
-        lastSync: this.lastSync,
-      };
-    } catch (error) {
-      this.logger.error('❌ Failed to get campaigns summary', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update campaign budget
-   */
-  async updateCampaignBudget(campaignId: string, newBudget: number) {
-    try {
-      this.logger.log(`🔧 Updating budget for campaign ${campaignId} to ${newBudget}`);
-
-      // Update via Amazon API
-      await this.amazonApi.put(`/sp/campaigns/${campaignId}`, {
-        budget: {
-          budget: newBudget,
-          budgetType: 'DAILY',
+      const response = await axios.get(`${this.amazonApiUrl}/sp/campaigns`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Amazon-Advertising-API-ClientId': this.configService.get<string>('AMAZON_CLIENT_ID'),
+          'Amazon-Advertising-API-Scope': apiScope,
+          'Content-Type': 'application/json',
         },
       });
 
-      // Refresh cache
-      await this.syncCampaignsFromAmazon();
+      this.campaignsCache = response.data;
+      this.cacheExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes cache
 
-      this.logger.log(`✅ Budget updated successfully for campaign ${campaignId}`);
-      return { success: true, campaignId, newBudget };
+      this.logger.log(`✅ Successfully fetched ${this.campaignsCache.length} campaigns`);
+      return this.campaignsCache;
     } catch (error) {
-      this.logger.error(`❌ Failed to update budget for campaign ${campaignId}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Pause campaign
-   */
-  async pauseCampaign(campaignId: string) {
-    try {
-      this.logger.log(`⏸️ Pausing campaign ${campaignId}`);
-
-      // Update via Amazon API
-      await this.amazonApi.put(`/sp/campaigns/${campaignId}`, {
-        state: 'PAUSED',
-      });
-
-      // Refresh cache
-      await this.syncCampaignsFromAmazon();
-
-      this.logger.log(`✅ Campaign ${campaignId} paused successfully`);
-      return { success: true, campaignId, status: 'PAUSED' };
-    } catch (error) {
-      this.logger.error(`❌ Failed to pause campaign ${campaignId}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Enable campaign
-   */
-  async enableCampaign(campaignId: string) {
-    try {
-      this.logger.log(`▶️ Enabling campaign ${campaignId}`);
-
-      // Update via Amazon API
-      await this.amazonApi.put(`/sp/campaigns/${campaignId}`, {
-        state: 'ENABLED',
-      });
-
-      // Refresh cache
-      await this.syncCampaignsFromAmazon();
-
-      this.logger.log(`✅ Campaign ${campaignId} enabled successfully`);
-      return { success: true, campaignId, status: 'ENABLED' };
-    } catch (error) {
-      this.logger.error(`❌ Failed to enable campaign ${campaignId}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Sync performance metrics (stub for optimization service)
-   */
-  async syncPerformanceMetrics(): Promise<any> {
-    this.logger.log('📊 Syncing performance metrics (in-memory only)');
-    // Returns cached campaigns data
-    return this.campaignsCache;
-  }
-
-  /**
-   * Optimize targeting (stub for optimization service)
-   */
-  async optimizeTargeting(campaignId: string): Promise<any> {
-    this.logger.log(`🎯 Optimizing targeting for campaign: ${campaignId} (stub)`);
-    // Stub implementation - queues optimization
-    return { success: true, message: 'Targeting optimization queued' };
-  }
-
-  /**
-   * Update campaign (stub for optimization service)
-   */
-  async updateCampaign(campaignId: string, updates: any): Promise<any> {
-    this.logger.log(`📝 Updating campaign: ${campaignId}`);
-    try {
-      // Update cache
-      const campaign = this.campaignsCache.find(c => c.campaignId === campaignId);
-      if (campaign) {
-        Object.assign(campaign, updates);
-      }
+      this.logger.error(`❌ API Error (${error.response?.status}) - /sp/campaigns`);
+      this.logger.error(`   Details: ${error.response?.data?.details || error.message}`);
       
-      return { success: true, campaign };
-    } catch (error) {
-      this.logger.error(`❌ Failed to update campaign ${campaignId}:`, error.message);
-      throw error;
+      return {
+        success: false,
+        error: error.message,
+        campaigns: [],
+        hint: 'Check your Amazon API credentials and AMAZON_ADVERTISING_API_SCOPE in Railway',
+      } as any;
     }
+  }
+
+  async getCampaignById(id: string): Promise<any> {
+    const campaigns = await this.getAllCampaigns();
+    return campaigns.find((c: any) => c.campaignId === id);
   }
 }
