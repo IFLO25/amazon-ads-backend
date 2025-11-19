@@ -108,4 +108,82 @@ export class CampaignsController {
       };
     }
   }
+
+  @Get('test-all-profiles')
+  @ApiOperation({ summary: 'Test /sp/campaigns with all available profile IDs' })
+  @ApiResponse({ status: 200, description: 'Returns test results for each profile' })
+  async testAllProfiles() {
+    try {
+      this.logger.log('🧪 Testing all profiles for /sp/campaigns access...');
+      
+      // First, get all profiles
+      const profiles = await this.amazonApi.get<any[]>('/v2/profiles');
+      this.logger.log(`📋 Found ${profiles.length} profiles`);
+      
+      const results = [];
+      
+      for (const profile of profiles) {
+        const profileId = profile.profileId;
+        const countryCode = profile.countryCode;
+        
+        this.logger.log(`🔍 Testing Profile ID: ${profileId} (${countryCode})...`);
+        
+        try {
+          // Temporarily override the profile ID for this request
+          const originalEnv = process.env.AMAZON_PROFILE_ID;
+          process.env.AMAZON_PROFILE_ID = String(profileId);
+          
+          const campaigns = await this.amazonApi.get<any[]>('/sp/campaigns');
+          
+          // Restore original env
+          process.env.AMAZON_PROFILE_ID = originalEnv;
+          
+          results.push({
+            profileId,
+            countryCode,
+            success: true,
+            campaignCount: campaigns.length,
+            message: `✅ SUCCESS - Found ${campaigns.length} campaigns`
+          });
+          
+          this.logger.log(`✅ Profile ${profileId} (${countryCode}): ${campaigns.length} campaigns`);
+        } catch (error) {
+          // Restore original env
+          const originalEnv = process.env.AMAZON_PROFILE_ID;
+          process.env.AMAZON_PROFILE_ID = originalEnv;
+          
+          results.push({
+            profileId,
+            countryCode,
+            success: false,
+            error: error.response?.data || error.message,
+            message: `❌ FAILED - ${error.response?.status || 'Unknown error'}`
+          });
+          
+          this.logger.error(`❌ Profile ${profileId} (${countryCode}): ${error.response?.status}`);
+        }
+      }
+      
+      const successfulProfiles = results.filter(r => r.success);
+      
+      return {
+        success: true,
+        summary: {
+          totalProfiles: profiles.length,
+          successfulProfiles: successfulProfiles.length,
+          failedProfiles: results.length - successfulProfiles.length
+        },
+        results,
+        recommendation: successfulProfiles.length > 0 
+          ? `Use Profile ID: ${successfulProfiles[0].profileId} (${successfulProfiles[0].countryCode})`
+          : 'No profile has access to Sponsored Products campaigns'
+      };
+    } catch (error) {
+      this.logger.error('Failed to test profiles:', error.message);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
 }
