@@ -83,4 +83,67 @@ export class ConfigController {
       currentStatus: this.amazonAuth.isConfigured() ? 'configured' : 'not_configured',
     };
   }
+
+  @Get('test-credentials')
+  @ApiOperation({ 
+    summary: '🔍 TEST: Check loaded credentials (debug mode)',
+    description: 'Shows the first/last characters of loaded credentials to verify they are loaded correctly from Railway environment variables.'
+  })
+  @ApiResponse({ status: 200, description: 'Returns masked credential info for debugging' })
+  async testCredentials() {
+    const clientId = this.config.get<string>('amazon.clientId');
+    const clientSecret = this.config.get<string>('amazon.clientSecret');
+    const refreshToken = this.config.get<string>('amazon.refreshToken');
+    const profileId = this.config.get<string>('amazon.advertisingAccountId');
+    const marketplace = this.config.get<string>('amazon.marketplace');
+
+    const maskCredential = (value: string | undefined) => {
+      if (!value || value.length < 10) return '❌ MISSING or TOO SHORT';
+      return `${value.substring(0, 8)}...${value.substring(value.length - 8)} (length: ${value.length})`;
+    };
+
+    return {
+      message: '🔍 Credential Debug Info',
+      timestamp: new Date().toISOString(),
+      credentials: {
+        clientId: maskCredential(clientId),
+        clientSecret: maskCredential(clientSecret),
+        refreshToken: maskCredential(refreshToken),
+        profileId: profileId || '❌ MISSING',
+        marketplace: marketplace || '❌ MISSING',
+      },
+      allPresent: !!(clientId && clientSecret && refreshToken && profileId),
+      tokenEndpoint: this.config.get<string>('amazon.tokenEndpoint'),
+      apiEndpoint: this.config.get<string>('amazon.apiEndpoint'),
+    };
+  }
+
+  @Post('test-token-refresh')
+  @ApiOperation({ 
+    summary: '🧪 TEST: Attempt to refresh Amazon access token',
+    description: 'Tests the token refresh flow and returns detailed error information if it fails.'
+  })
+  @ApiResponse({ status: 200, description: 'Token refresh test result' })
+  async testTokenRefresh() {
+    try {
+      const accessToken = await this.amazonAuth.getAccessToken();
+      
+      return {
+        success: true,
+        message: '✅ Token refresh successful!',
+        tokenPreview: `${accessToken.substring(0, 20)}...${accessToken.substring(accessToken.length - 10)}`,
+        tokenLength: accessToken.length,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: '❌ Token refresh failed',
+        error: error.message,
+        details: error.response?.data || 'No additional details',
+        statusCode: error.response?.status,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
 }

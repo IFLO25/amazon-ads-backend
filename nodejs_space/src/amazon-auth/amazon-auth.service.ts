@@ -1,6 +1,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+// import { PrismaService } from '../prisma/prisma.service'; // Disabled - No database required
 import axios from 'axios';
 
 interface TokenResponse {
@@ -18,6 +19,7 @@ export class AmazonAuthService {
 
   constructor(
     private readonly configService: ConfigService,
+    // private readonly prisma: PrismaService, // Disabled - No database required
   ) {}
 
   /**
@@ -52,11 +54,12 @@ export class AmazonAuthService {
   async getAccessToken(): Promise<string> {
     // Check if we have a valid token in memory
     if (this.accessToken && this.tokenExpiresAt && new Date() < this.tokenExpiresAt) {
+      this.logger.log('✅ Using cached access token');
       return this.accessToken as string;
     }
 
-    // Refresh token
-    this.logger.log('Access token expired or missing, refreshing...');
+    // Refresh token (no database storage for MVP)
+    this.logger.log('🔄 Access token expired or missing, refreshing...');
     return await this.refreshAccessToken();
   }
 
@@ -76,58 +79,75 @@ export class AmazonAuthService {
     }
 
     this.logger.log('🔄 Refreshing access token...');
-    this.logger.log(`   - Endpoint: ${tokenEndpoint}`);
-    this.logger.log(`   - Client ID: ${clientId ? clientId.substring(0, 20) + '...' : 'MISSING'}`);
-    this.logger.log(`   - Refresh Token: ${refreshToken ? refreshToken.substring(0, 20) + '...' : 'MISSING'}`);
+    this.logger.log(`📍 Token Endpoint: ${tokenEndpoint}`);
+    this.logger.log(`🆔 Client ID: ${clientId.substring(0, 20)}...`);
+    this.logger.log(`🔑 Refresh Token: ${refreshToken.substring(0, 20)}...`);
 
     try {
+      // Amazon expects Basic Authentication with client_id:client_secret
+      const authString = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+      
       const response = await axios.post<TokenResponse>(
         tokenEndpoint!,
         new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token: refreshToken,
-          client_id: clientId,
-          client_secret: clientSecret,
         }),
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Basic ${authString}`,
           },
         },
       );
 
       const data = response.data as TokenResponse;
-      this.logger.log('📦 Token response received:', JSON.stringify(data, null, 2));
-
       const { access_token: accessToken, expires_in, refresh_token: newRefreshToken } = data;
-
-      if (!accessToken) {
-        this.logger.error('❌ No access_token in response!');
-        throw new Error('No access_token received from Amazon');
-      }
-
-      this.logger.log(`🔑 Access Token: ${accessToken.substring(0, 30)}...`);
-      this.logger.log(`⏱️ Expires in: ${expires_in} seconds`);
 
       // Calculate expiration time (subtract 5 minutes for safety margin)
       const expiresAt = new Date(Date.now() + (expires_in - 300) * 1000);
 
-      // Store in memory
+      // Store in memory (no database for MVP)
       this.accessToken = accessToken;
       this.tokenExpiresAt = expiresAt;
 
-      this.logger.log('✅ Access token refreshed successfully');
-      this.logger.log(`🔑 Token expires at: ${expiresAt.toISOString()}`);
-      
+      this.logger.log('✅ Access token refreshed successfully!');
+      this.logger.log(`🕐 Token expires at: ${expiresAt.toISOString()}`);
+      this.logger.log(`⏰ Valid for: ${Math.floor(expires_in / 60)} minutes`);
       return accessToken;
     } catch (error) {
       this.logger.error('❌ Failed to refresh access token');
-      this.logger.error(`   Status: ${error.response?.status}`);
-      this.logger.error(`   Data: ${JSON.stringify(error.response?.data)}`);
-      this.logger.error(`   Message: ${error.message}`);
+      this.logger.error(`Status: ${error.response?.status}`);
+      this.logger.error(`Data: ${JSON.stringify(error.response?.data)}`);
       throw new Error('Failed to refresh Amazon access token');
     }
   }
+
+  // Database methods disabled for MVP (no database required)
+  // /**
+  //  * Get stored token from database
+  //  */
+  // private async getStoredToken() {
+  //   const tokens = await this.prisma.tokenStorage.findMany({
+  //     orderBy: { createdAt: 'desc' },
+  //     take: 1,
+  //   });
+  //   return tokens.length > 0 ? tokens[0] : null;
+  // }
+
+  // /**
+  //  * Store token in database
+  //  */
+  // private async storeToken(accessToken: string, refreshToken: string, expiresAt: Date) {
+  //   await this.prisma.tokenStorage.deleteMany({});
+  //   await this.prisma.tokenStorage.create({
+  //     data: {
+  //       accessToken: accessToken,
+  //       refreshToken: refreshToken,
+  //       expiresAt: expiresAt,
+  //     },
+  //   });
+  // }
 
   /**
    * Check if credentials are configured
