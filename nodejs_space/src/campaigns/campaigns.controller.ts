@@ -149,46 +149,50 @@ export class CampaignsController {
         this.logger.log(`🔍 Testing Profile ID: ${profileId} (${countryCode})...`);
         
         try {
-          // Try BOTH v2 and v3 endpoints
+          // Try MULTIPLE endpoint variations
           let campaigns = null;
-          let apiVersion = null;
+          let endpoint = null;
           
-          // First try v2 endpoint
-          try {
-            const v2Response = await axios.get('https://advertising-api-eu.amazon.com/v2/sp/campaigns', {
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Amazon-Advertising-API-ClientId': clientId,
-                'Amazon-Advertising-API-Scope': String(profileId),
-                'Content-Type': 'application/json'
-              }
-            });
-            campaigns = v2Response.data;
-            apiVersion = 'v2';
-          } catch (v2Error) {
-            // If v2 fails, try v3
-            const v3Response = await axios.get('https://advertising-api-eu.amazon.com/sp/campaigns', {
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Amazon-Advertising-API-ClientId': clientId,
-                'Amazon-Advertising-API-Scope': String(profileId),
-                'Content-Type': 'application/json'
-              }
-            });
-            campaigns = v3Response.data;
-            apiVersion = 'v3';
+          const endpointsToTry = [
+            { url: 'https://advertising-api-eu.amazon.com/sp/campaigns', name: 'v3: /sp/campaigns' },
+            { url: 'https://advertising-api-eu.amazon.com/v2/sp/campaigns', name: 'v2: /v2/sp/campaigns' },
+            { url: 'https://advertising-api-eu.amazon.com/v3/sp/campaigns', name: 'v3: /v3/sp/campaigns' },
+            { url: 'https://advertising-api-eu.amazon.com/sb/campaigns', name: 'sb: /sb/campaigns' }
+          ];
+          
+          for (const testEndpoint of endpointsToTry) {
+            try {
+              const response = await axios.get(testEndpoint.url, {
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Amazon-Advertising-API-ClientId': clientId,
+                  'Amazon-Advertising-API-Scope': String(profileId),
+                  'Content-Type': 'application/json'
+                }
+              });
+              campaigns = response.data;
+              endpoint = testEndpoint.name;
+              break; // Success! Stop trying
+            } catch (err) {
+              // Try next endpoint
+              continue;
+            }
+          }
+          
+          if (!campaigns) {
+            throw new Error('All endpoints failed');
           }
           
           results.push({
             profileId,
             countryCode,
             success: true,
-            apiVersion,
+            endpoint,
             campaignCount: campaigns.length,
-            message: `✅ SUCCESS (${apiVersion}) - Found ${campaigns.length} campaigns`
+            message: `✅ SUCCESS (${endpoint}) - Found ${campaigns.length} campaigns`
           });
           
-          this.logger.log(`✅ Profile ${profileId} (${countryCode}): ${campaigns.length} campaigns using ${apiVersion}`);
+          this.logger.log(`✅ Profile ${profileId} (${countryCode}): ${campaigns.length} campaigns using ${endpoint}`);
         } catch (error) {
           const errorStatus = error.response?.status || 'No status';
           const errorMessage = error.response?.data?.details || error.response?.data?.message || error.message;
