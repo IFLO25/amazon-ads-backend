@@ -146,4 +146,42 @@ export class ConfigController {
       };
     }
   }
+
+  @Get('list-profiles')
+  @ApiOperation({ 
+    summary: '📋 LIST: Get all available Amazon Advertising Profiles',
+    description: 'Fetches all advertising profiles associated with your Amazon account to find the correct Profile ID.'
+  })
+  @ApiResponse({ status: 200, description: 'Returns list of all available advertising profiles' })
+  async listProfiles() {
+    try {
+      const profiles = await this.amazonAuth.fetchProfiles();
+      
+      return {
+        success: true,
+        message: '✅ Profiles fetched successfully!',
+        count: profiles.length,
+        profiles: profiles.map(p => ({
+          profileId: p.profileId,
+          accountInfo: p.accountInfo,
+          countryCode: p.countryCode,
+          currencyCode: p.currencyCode,
+          timezone: p.timezone,
+          accountType: p.accountType,
+        })),
+        currentProfileId: this.config.get<string>('amazon.advertisingAccountId'),
+        hint: 'Update AMAZON_ADVERTISING_ACCOUNT_ID in Railway with the correct profileId from the list above',
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: '❌ Failed to fetch profiles',
+        error: error.message,
+        details: error.response?.data || 'No additional details',
+        statusCode: error.response?.status,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
 }
