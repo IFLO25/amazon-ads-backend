@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Amazon Ads OAuth - Token Generator (EU)</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #232f3e;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+            border-left: 5px solid #ffc107;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+            border-left: 5px solid #2196f3;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .button {
+            background: linear-gradient(135deg, #ff9900, #ff6600);
+            color: white;
+            padding: 20px 40px;
+            text-decoration: none;
+            border-radius: 8px;
+            display: block;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(255,153,0,0.3);
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,153,0,0.4);
+        }
+        .steps {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        .steps ol {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+        .steps li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .code-box {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Amazon Ads API - Token Generator</h1>
+        <div class="subtitle">Für EU-Region (Deutschland, UK, Italien)</div>
+        
+        <div class="warning">
+            <strong>⚠️ WICHTIG: REGION-PROBLEM GEFUNDEN!</strong>
+            <p>Das alte Token wurde für die US-Region erstellt, aber deine API verwendet die EU-Region!</p>
+            <p><strong>→ Deswegen funktioniert es nicht!</strong></p>
+        </div>
+
+        <div class="info">
+            <strong>✅ Voraussetzungen:</strong>
+            <ul>
+                <li>Von allen <strong>persönlichen</strong> Amazon-Konten abmelden!</li>
+                <li>Nur mit <strong>Seller Central / Vendor Central</strong> Account anmelden</li>
+                <li>Wähle deine Hauptregion (DE, UK oder IT)</li>
+            </ul>
+        </div>
+
+        <div class="button-container">
+            <a href="https://www.amazon.de/ap/oa?client_id=amzn1.application-oa2-client.36cb8ad78bde4bd08703feb0035957d8&scope=advertising::campaign_management&response_type=code&redirect_uri=http://localhost:3001/callback" 
+               class="button">
+                🇩🇪 Deutschland (Amazon.de)
+            </a>
+            
+            <a href="https://www.amazon.co.uk/ap/oa?client_id=amzn1.application-oa2-client.36cb8ad78bde4bd08703feb0035957d8&scope=advertising::campaign_management&response_type=code&redirect_uri=http://localhost:3001/callback" 
+               class="button">
+                🇬🇧 United Kingdom (Amazon.co.uk)
+            </a>
+            
+            <a href="https://www.amazon.it/ap/oa?client_id=amzn1.application-oa2-client.36cb8ad78bde4bd08703feb0035957d8&scope=advertising::campaign_management&response_type=code&redirect_uri=http://localhost:3001/callback" 
+               class="button">
+                🇮🇹 Italia (Amazon.it)
+            </a>
+        </div>
+
+        <div class="steps">
+            <strong>📋 Schritte nach dem Klick:</strong>
+            <ol>
+                <li>Du wirst zur Amazon-Login-Seite weitergeleitet</li>
+                <li>Melde dich mit deinem <strong>Seller/Vendor Central Account</strong> an</li>
+                <li>Klicke auf <span class="highlight">"Zulassen"</span> / <span class="highlight">"Allow"</span></li>
+                <li>Die Seite lädt nicht (das ist normal!)</li>
+                <li>In der Adressleiste siehst du eine URL wie:
+                    <div class="code-box">http://localhost:3001/callback?code=ANxxxxxx...&scope=...</div>
+                </li>
+                <li>Kopiere den <strong>CODE</strong> (alles zwischen <code>code=</code> und <code>&scope</code>)</li>
+                <li>Schicke mir den Code im Chat</li>
+            </ol>
+        </div>
+
+        <div class="warning">
+            <strong>💡 Beispiel:</strong>
+            <p>Wenn die URL ist:</p>
+            <div class="code-box" style="background: #fff; color: #000; border: 1px solid #ddd;">
+                http://localhost:3001/callback?<span style="color: #ff6600; font-weight: bold;">code=ANabcdefg12345xyz</span>&scope=...
+            </div>
+            <p>Dann kopiere nur: <span class="highlight">ANabcdefg12345xyz</span></p>
+        </div>
+    </div>
+</body>
+</html>

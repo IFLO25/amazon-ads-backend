@@ -89,108 +89,6 @@ export class CampaignsController {
     }
   }
 
-  @Get(':campaignId')
-  @ApiOperation({ summary: 'Get a single campaign by Amazon campaign ID' })
-  @ApiParam({ name: 'campaignId', description: 'Amazon campaign ID' })
-  @ApiResponse({ status: 200, description: 'Returns campaign details' })
-  @ApiResponse({ status: 404, description: 'Campaign not found' })
-  async findOne(@Param('campaignId') campaignId: string) {
-    try {
-      this.logger.log(`📊 Fetching campaign ${campaignId}...`);
-      
-      const axios = require('axios');
-      const accessToken = await this.amazonAuth.getAccessToken();
-      const clientId = process.env.AMAZON_CLIENT_ID;
-      const profileId = process.env.AMAZON_PROFILE_ID;
-      
-      const endpointsToTry = [
-        `https://advertising-api-eu.amazon.com/spcampaigns/${campaignId}`,
-        `https://advertising-api-eu.amazon.com/v2/spcampaigns/${campaignId}`,
-        `https://advertising-api-eu.amazon.com/v3/spcampaigns/${campaignId}`,
-        `https://advertising-api-eu.amazon.com/sp/campaigns/${campaignId}`,
-        `https://advertising-api-eu.amazon.com/v2/sp/campaigns/${campaignId}`,
-        `https://advertising-api-eu.amazon.com/v3/sp/campaigns/${campaignId}`
-      ];
-      
-      let campaign = null;
-      
-      for (const url of endpointsToTry) {
-        try {
-          const response = await axios.get(url, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Amazon-Advertising-API-ClientId': clientId,
-              'Amazon-Advertising-API-Scope': String(profileId),
-              'Content-Type': 'application/json'
-            }
-          });
-          campaign = response.data;
-          break;
-        } catch (err) {
-          continue;
-        }
-      }
-      
-      if (!campaign) {
-        throw new Error('Campaign not found');
-      }
-      
-      return {
-        success: true,
-        campaign,
-        metadata: {
-          timestamp: new Date().toISOString()
-        }
-      };
-    } catch (error) {
-      this.logger.error(`Failed to fetch campaign ${campaignId}:`, error.message);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  @Put(':campaignId')
-  @ApiOperation({ summary: 'Update a campaign on Amazon' })
-  @ApiParam({ name: 'campaignId', description: 'Amazon campaign ID' })
-  @ApiResponse({ status: 200, description: 'Campaign updated successfully' })
-  async updateCampaign(
-    @Param('campaignId') campaignId: string,
-    @Body() updates: { state?: string; budget?: number },
-  ) {
-    try {
-      this.logger.log(`📝 Updating campaign ${campaignId}...`);
-      
-      const amazonUpdates: any = {};
-      if (updates.state) {
-        amazonUpdates.state = updates.state;
-      }
-      if (updates.budget) {
-        amazonUpdates.budget = {
-          budget: updates.budget,
-          budgetType: 'DAILY'
-        };
-      }
-
-      const result = await this.amazonApi.put(`/sp/campaigns/${campaignId}`, amazonUpdates);
-      
-      this.logger.log(`✅ Campaign ${campaignId} updated successfully`);
-      
-      return {
-        success: true,
-        message: 'Campaign updated successfully',
-        result
-      };
-    } catch (error) {
-      this.logger.error(`Failed to update campaign ${campaignId}:`, error.message);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
   @Get('debug-profiles')
   @ApiOperation({ summary: 'Show all profile details with exact error messages' })
   @ApiResponse({ status: 200, description: 'Returns detailed profile information' })
@@ -377,6 +275,108 @@ export class CampaignsController {
       };
     } catch (error) {
       this.logger.error('Failed to test profiles:', error.message);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  @Get(':campaignId')
+  @ApiOperation({ summary: 'Get a single campaign by Amazon campaign ID' })
+  @ApiParam({ name: 'campaignId', description: 'Amazon campaign ID' })
+  @ApiResponse({ status: 200, description: 'Returns campaign details' })
+  @ApiResponse({ status: 404, description: 'Campaign not found' })
+  async findOne(@Param('campaignId') campaignId: string) {
+    try {
+      this.logger.log(`📊 Fetching campaign ${campaignId}...`);
+      
+      const axios = require('axios');
+      const accessToken = await this.amazonAuth.getAccessToken();
+      const clientId = process.env.AMAZON_CLIENT_ID;
+      const profileId = process.env.AMAZON_PROFILE_ID;
+      
+      const endpointsToTry = [
+        `https://advertising-api-eu.amazon.com/spcampaigns/${campaignId}`,
+        `https://advertising-api-eu.amazon.com/v2/spcampaigns/${campaignId}`,
+        `https://advertising-api-eu.amazon.com/v3/spcampaigns/${campaignId}`,
+        `https://advertising-api-eu.amazon.com/sp/campaigns/${campaignId}`,
+        `https://advertising-api-eu.amazon.com/v2/sp/campaigns/${campaignId}`,
+        `https://advertising-api-eu.amazon.com/v3/sp/campaigns/${campaignId}`
+      ];
+      
+      let campaign = null;
+      
+      for (const url of endpointsToTry) {
+        try {
+          const response = await axios.get(url, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Amazon-Advertising-API-ClientId': clientId,
+              'Amazon-Advertising-API-Scope': String(profileId),
+              'Content-Type': 'application/json'
+            }
+          });
+          campaign = response.data;
+          break;
+        } catch (err) {
+          continue;
+        }
+      }
+      
+      if (!campaign) {
+        throw new Error('Campaign not found');
+      }
+      
+      return {
+        success: true,
+        campaign,
+        metadata: {
+          timestamp: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      this.logger.error(`Failed to fetch campaign ${campaignId}:`, error.message);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  @Put(':campaignId')
+  @ApiOperation({ summary: 'Update a campaign on Amazon' })
+  @ApiParam({ name: 'campaignId', description: 'Amazon campaign ID' })
+  @ApiResponse({ status: 200, description: 'Campaign updated successfully' })
+  async updateCampaign(
+    @Param('campaignId') campaignId: string,
+    @Body() updates: { state?: string; budget?: number },
+  ) {
+    try {
+      this.logger.log(`📝 Updating campaign ${campaignId}...`);
+      
+      const amazonUpdates: any = {};
+      if (updates.state) {
+        amazonUpdates.state = updates.state;
+      }
+      if (updates.budget) {
+        amazonUpdates.budget = {
+          budget: updates.budget,
+          budgetType: 'DAILY'
+        };
+      }
+
+      const result = await this.amazonApi.put(`/sp/campaigns/${campaignId}`, amazonUpdates);
+      
+      this.logger.log(`✅ Campaign ${campaignId} updated successfully`);
+      
+      return {
+        success: true,
+        message: 'Campaign updated successfully',
+        result
+      };
+    } catch (error) {
+      this.logger.error(`Failed to update campaign ${campaignId}:`, error.message);
       return {
         success: false,
         error: error.message
