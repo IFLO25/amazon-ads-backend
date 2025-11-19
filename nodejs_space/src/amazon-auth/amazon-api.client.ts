@@ -57,28 +57,28 @@ export class AmazonApiClient {
         
         config.headers.Authorization = `Bearer ${accessToken}`;
 
-        // Get and add Amazon-Advertising-API-Scope (Account ID)
+        // Get and add Amazon-Advertising-API-Scope (Profile ID for SP endpoints)
         if (!config.url?.includes('/v2/profiles')) {
-          // ALWAYS use Account ID for SP endpoints (more reliable than Profile ID)
-          const accountId = this.configService.get<string>('amazon.advertisingAccountId');
+          // PRIORITY: Use Profile ID for SP endpoints (required by Amazon Ads API)
           const profileId = this.configService.get<string>('amazon.profileId');
+          const accountId = this.configService.get<string>('amazon.advertisingAccountId');
           
-          this.logger.log(`🔍 Account ID from config: ${accountId || 'MISSING'}`);
           this.logger.log(`🔍 Profile ID from config: ${profileId || 'MISSING'}`);
+          this.logger.log(`🔍 Account ID from config: ${accountId || 'MISSING'}`);
           
-          // PRIORITY: Use Account ID first (amznl.ads-account.g.xxx format)
-          if (accountId) {
-            config.headers['Amazon-Advertising-API-Scope'] = accountId;
-            this.logger.log(`✅ Using Account ID: ${accountId}`);
-          } else if (profileId) {
+          // SP endpoints require Profile ID (numeric), not Account ID
+          if (profileId) {
             config.headers['Amazon-Advertising-API-Scope'] = profileId;
-            this.logger.log(`⚠️ Fallback to Profile ID: ${profileId}`);
+            this.logger.log(`✅ Using Profile ID: ${profileId}`);
+          } else if (accountId) {
+            config.headers['Amazon-Advertising-API-Scope'] = accountId;
+            this.logger.log(`⚠️ Fallback to Account ID: ${accountId}`);
           } else {
-            this.logger.error('❌ CRITICAL: No Account ID or Profile ID available!');
+            this.logger.error('❌ CRITICAL: No Profile ID or Account ID available!');
             this.logger.error('   Environment Variables:');
-            this.logger.error(`   - AMAZON_ADVERTISING_API_SCOPE: ${process.env.AMAZON_ADVERTISING_API_SCOPE || 'NOT SET'}`);
             this.logger.error(`   - AMAZON_PROFILE_ID: ${process.env.AMAZON_PROFILE_ID || 'NOT SET'}`);
-            throw new Error('No Amazon Account ID or Profile ID configured');
+            this.logger.error(`   - AMAZON_ADVERTISING_API_SCOPE: ${process.env.AMAZON_ADVERTISING_API_SCOPE || 'NOT SET'}`);
+            throw new Error('No Amazon Profile ID or Account ID configured');
           }
         }
 
