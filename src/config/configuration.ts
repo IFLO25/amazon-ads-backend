@@ -8,6 +8,7 @@ export default () => ({
     clientSecret: process.env.AMAZON_CLIENT_SECRET,
     refreshToken: process.env.AMAZON_REFRESH_TOKEN,
     advertisingAccountId: process.env.AMAZON_ADVERTISING_ACCOUNT_ID,
+    apiScope: process.env.AMAZON_ADVERTISING_API_SCOPE,
     marketplace: process.env.AMAZON_MARKETPLACE || 'EU',
     sellerId: process.env.AMAZON_SELLER_ID,
     apiEndpoint: 'https://advertising-api-eu.amazon.com',

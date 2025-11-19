@@ -38,9 +38,12 @@ export class AmazonApiClient {
         const accessToken = await this.authService.getAccessToken();
         config.headers.Authorization = `Bearer ${accessToken}`;
 
-        // Add advertising account ID header
-        const accountId = this.configService.get<string>('amazon.advertisingAccountId');
-        config.headers['Amazon-Advertising-API-Scope'] = accountId;
+        // Add API Scope header (Profile ID or Account ID)
+        const apiScope = this.configService.get<string>('amazon.apiScope');
+        if (apiScope) {
+          config.headers['Amazon-Advertising-API-Scope'] = apiScope;
+          this.logger.debug(`Using API Scope: ${apiScope}`);
+        }
 
         this.logger.debug(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
         return config;
