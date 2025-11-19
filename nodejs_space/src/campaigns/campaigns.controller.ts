@@ -191,6 +191,76 @@ export class CampaignsController {
     }
   }
 
+  @Get('debug-profiles')
+  @ApiOperation({ summary: 'Show all profile details with exact error messages' })
+  @ApiResponse({ status: 200, description: 'Returns detailed profile information' })
+  async debugProfiles() {
+    try {
+      const axios = require('axios');
+      const accessToken = await this.amazonAuth.getAccessToken();
+      const clientId = process.env.AMAZON_CLIENT_ID;
+      const currentProfileId = process.env.AMAZON_PROFILE_ID;
+      
+      // Get all profiles
+      const profilesResponse = await axios.get('https://advertising-api-eu.amazon.com/v2/profiles', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Amazon-Advertising-API-ClientId': clientId,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const profiles = profilesResponse.data;
+      
+      // Test current profile ID
+      let currentProfileTest = null;
+      try {
+        const response = await axios.get('https://advertising-api-eu.amazon.com/sp/campaigns', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Amazon-Advertising-API-ClientId': clientId,
+            'Amazon-Advertising-API-Scope': String(currentProfileId),
+            'Content-Type': 'application/json'
+          }
+        });
+        currentProfileTest = {
+          success: true,
+          campaignCount: response.data.length
+        };
+      } catch (error) {
+        currentProfileTest = {
+          success: false,
+          status: error.response?.status,
+          errorCode: error.response?.data?.code,
+          errorMessage: error.response?.data?.details || error.response?.data?.message || error.message,
+          fullError: error.response?.data
+        };
+      }
+      
+      return {
+        currentConfig: {
+          profileId: currentProfileId,
+          clientId: clientId.substring(0, 20) + '...',
+          tokenLength: accessToken.length
+        },
+        currentProfileTest,
+        allProfiles: profiles.map(p => ({
+          profileId: p.profileId,
+          countryCode: p.countryCode,
+          marketplace: p.marketplace,
+          accountInfo: p.accountInfo,
+          type: p.type
+        }))
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        fullError: error.response?.data
+      };
+    }
+  }
+
   @Get('test-all-profiles')
   @ApiOperation({ summary: 'Test /sp/campaigns with all available profile IDs' })
   @ApiResponse({ status: 200, description: 'Returns test results for each profile' })
