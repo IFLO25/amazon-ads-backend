@@ -30,14 +30,18 @@ export class OptimizationService implements OnModuleInit {
   ) {}
 
   /**
-   * 🚀 Run initial optimization on startup
+   * 🚀 Run initial optimization on startup (DISABLED for MVP)
    */
   async onModuleInit() {
     this.logger.log('🚀 ========================================');
     this.logger.log('🚀 AMAZON ADS OPTIMIZER GESTARTET!');
     this.logger.log('🚀 ========================================');
-    this.logger.log('');
+    this.logger.log('⚠️  Auto-optimization disabled (MVP mode - DB not required)');
+    this.logger.log('✅ API endpoints are ready to use!');
+    return; // Skip auto-optimization for now
     
+    // ORIGINAL CODE - DISABLED FOR MVP:
+    /*
     // Wait 5 seconds for all modules to initialize
     await new Promise(resolve => setTimeout(resolve, 5000));
     
@@ -100,6 +104,7 @@ export class OptimizationService implements OnModuleInit {
       this.logger.error('❌ Initiale Optimierung fehlgeschlagen:', error.message);
       this.logger.error('   Das System wird es beim nächsten Cron-Job erneut versuchen.');
     }
+    */
   }
 
   /**
@@ -107,6 +112,7 @@ export class OptimizationService implements OnModuleInit {
    */
   @Cron(CronExpression.EVERY_HOUR)
   async handleOptimizationCron() {
+    return; // Disabled for MVP (DB not required)
     this.logger.log('Starting scheduled optimization...');
     await this.optimizeAllCampaigns();
   }
@@ -116,6 +122,7 @@ export class OptimizationService implements OnModuleInit {
    */
   @Cron('30 * * * *')
   async handleSyncCron() {
+    return; // Disabled for MVP (DB not required)
     this.logger.log('Starting scheduled sync...');
     try {
       await this.campaignsService.syncCampaignsFromAmazon();
@@ -130,6 +137,7 @@ export class OptimizationService implements OnModuleInit {
    */
   @Cron('0 */2 * * *')
   async handleKeywordOptimizationCron() {
+    return; // Disabled for MVP (DB not required)
     this.logger.log('⚡ Starting scheduled keyword optimization...');
     try {
       const results = await this.keywordsService.optimizeAllKeywords();
@@ -158,6 +166,7 @@ export class OptimizationService implements OnModuleInit {
    */
   @Cron('0 */3 * * *')
   async handleTargetingOptimizationCron() {
+    return; // Disabled for MVP (DB not required)
     this.logger.log('🎯 Starting scheduled targeting optimization...');
     try {
       const campaigns = await this.prisma.campaign.findMany({
