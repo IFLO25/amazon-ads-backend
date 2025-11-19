@@ -67,9 +67,9 @@ export class AmazonAuthService {
   }
 
   // Stub methods for compatibility with controllers
-  async exchangeCodeForToken(code: string): Promise<any> {
+  async exchangeCodeForToken(code: string, clientId?: string, clientSecret?: string, redirectUri?: string): Promise<any> {
     this.logger.warn('exchangeCodeForToken called but not implemented in MVP');
-    throw new Error('Not implemented in MVP version');
+    throw new Error('Not implemented in MVP version - OAuth flow not available');
   }
 
   async getProfiles(): Promise<any[]> {

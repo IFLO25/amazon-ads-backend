@@ -78,4 +78,24 @@ export class CampaignsService {
     this.logger.warn('syncPerformanceMetrics called but not implemented in MVP');
     return { message: 'Not implemented in MVP version' };
   }
+
+  async optimizeTargeting(campaignId: string): Promise<any> {
+    this.logger.warn(`optimizeTargeting called for campaign ${campaignId} but not implemented in MVP`);
+    return {
+      success: false,
+      message: 'Not implemented in MVP version',
+      campaignId,
+    };
+  }
+
+  async updateCampaign(campaignId: string, updates: any): Promise<any> {
+    this.logger.warn(`updateCampaign called for campaign ${campaignId} but not implemented in MVP`);
+    this.logger.log(`Would update: ${JSON.stringify(updates)}`);
+    return {
+      success: false,
+      message: 'Not implemented in MVP version',
+      campaignId,
+      updates,
+    };
+  }
 }
