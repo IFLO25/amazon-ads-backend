@@ -119,7 +119,9 @@ export class AmazonAuthService {
       this.logger.error('❌ Failed to refresh access token');
       this.logger.error(`Status: ${error.response?.status}`);
       this.logger.error(`Data: ${JSON.stringify(error.response?.data)}`);
-      throw new Error('Failed to refresh Amazon access token');
+      this.logger.error(`Message: ${error.message}`);
+      // Re-throw the original error to preserve response data for debugging
+      throw error;
     }
   }
 
