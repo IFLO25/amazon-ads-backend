@@ -68,10 +68,10 @@ export class AmazonApiClient {
           
           // SP endpoints require Profile ID (numeric), not Account ID
           if (profileId) {
-            config.headers['Amazon-Advertising-API-Scope'] = profileId;
-            this.logger.log(`✅ Using Profile ID: ${profileId}`);
+            config.headers['Amazon-Advertising-API-Scope'] = String(profileId);
+            this.logger.log(`✅ Using Profile ID: ${profileId} (type: ${typeof profileId})`);
           } else if (accountId) {
-            config.headers['Amazon-Advertising-API-Scope'] = accountId;
+            config.headers['Amazon-Advertising-API-Scope'] = String(accountId);
             this.logger.log(`⚠️ Fallback to Account ID: ${accountId}`);
           } else {
             this.logger.error('❌ CRITICAL: No Profile ID or Account ID available!');
@@ -82,8 +82,12 @@ export class AmazonApiClient {
           }
         }
 
-        // Only log the request method and URL (no verbose headers)
+        // Log the request with key headers for debugging
         this.logger.log(`🌐 ${config.method?.toUpperCase()} ${config.url}`);
+        this.logger.log(`   📋 Headers:`);
+        this.logger.log(`      Authorization: Bearer ${accessToken.substring(0, 30)}...`);
+        this.logger.log(`      Amazon-Advertising-API-ClientId: ${config.headers['Amazon-Advertising-API-ClientId']}`);
+        this.logger.log(`      Amazon-Advertising-API-Scope: ${config.headers['Amazon-Advertising-API-Scope'] || 'NOT SET'}`);
         return config;
       },
       (error) => {
