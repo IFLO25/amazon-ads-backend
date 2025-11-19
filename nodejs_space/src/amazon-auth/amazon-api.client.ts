@@ -252,7 +252,7 @@ export class AmazonApiClient {
    * Get campaigns with optional state filter
    */
   async getCampaigns(stateFilter?: string): Promise<any[]> {
-    let url = '/sp/campaigns';
+    let url = '/v2/sp/campaigns';
     if (stateFilter) {
       url += `?stateFilter=${stateFilter}`;
     }

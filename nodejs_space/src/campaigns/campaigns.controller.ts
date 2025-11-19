@@ -21,8 +21,8 @@ export class CampaignsController {
     try {
       this.logger.log('📊 Fetching campaigns from Amazon API...');
       
-      // Fetch campaigns directly from Amazon API (v3)
-      const campaigns = await this.amazonApi.get<any[]>('/sp/campaigns');
+      // Fetch campaigns directly from Amazon API (v2)
+      const campaigns = await this.amazonApi.get<any[]>('/v2/sp/campaigns');
       
       this.logger.log(`✅ Found ${campaigns.length} campaigns`);
       

@@ -18,7 +18,7 @@ export class KeywordsController {
       this.logger.log('📊 Fetching keywords from Amazon API...');
       
       // Fetch keywords directly from Amazon API
-      const keywords = await this.amazonApi.get<any[]>('/sp/keywords');
+      const keywords = await this.amazonApi.get<any[]>('/v2/sp/keywords');
       
       this.logger.log(`✅ Found ${keywords.length} keywords`);
       
