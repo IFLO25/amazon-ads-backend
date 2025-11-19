@@ -38,7 +38,7 @@ export class AmazonAuthService {
       const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
       this.logger.log('📤 Sending token refresh request to Amazon...');
-      this.logger.log(`   Authorization: Bearer ${basicAuth.substring(0, 20)}...`);
+      this.logger.log(`   Authorization: Basic ${basicAuth.substring(0, 20)}...`);
 
       const response = await axios.post(
         'https://api.amazon.com/auth/o2/token',
