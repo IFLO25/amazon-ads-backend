@@ -264,3 +264,4 @@ Bei Fragen oder Problemen:
 - Kontaktiere Amazon Advertising Support
 
 **Das System ist bereit - trage deine Credentials ein und starte durch!** 🚀
+
