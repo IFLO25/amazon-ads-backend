@@ -28,9 +28,12 @@ export class KeywordsController {
       const profileId = process.env.AMAZON_PROFILE_ID;
       
       const endpointsToTry = [
-        { url: 'https://advertising-api-eu.amazon.com/v3/sp/keywords', name: 'v3: /v3/sp/keywords' },
-        { url: 'https://advertising-api-eu.amazon.com/sp/keywords', name: 'v3: /sp/keywords' },
-        { url: 'https://advertising-api-eu.amazon.com/v2/sp/keywords', name: 'v2: /v2/sp/keywords' }
+        { url: 'https://advertising-api-eu.amazon.com/spkeywords', name: '/spkeywords' },
+        { url: 'https://advertising-api-eu.amazon.com/v2/spkeywords', name: 'v2: /v2/spkeywords' },
+        { url: 'https://advertising-api-eu.amazon.com/v3/spkeywords', name: 'v3: /v3/spkeywords' },
+        { url: 'https://advertising-api-eu.amazon.com/sp/keywords', name: '/sp/keywords' },
+        { url: 'https://advertising-api-eu.amazon.com/v2/sp/keywords', name: 'v2: /v2/sp/keywords' },
+        { url: 'https://advertising-api-eu.amazon.com/v3/sp/keywords', name: 'v3: /v3/sp/keywords' }
       ];
       
       let keywords = null;

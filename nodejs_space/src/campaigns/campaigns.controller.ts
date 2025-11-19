@@ -27,11 +27,14 @@ export class CampaignsController {
       const clientId = process.env.AMAZON_CLIENT_ID;
       const profileId = process.env.AMAZON_PROFILE_ID;
       
-      // Try multiple endpoints
+      // Try multiple endpoints (including "spcampaigns" as one word)
       const endpointsToTry = [
-        { url: 'https://advertising-api-eu.amazon.com/v3/sp/campaigns', name: 'v3: /v3/sp/campaigns' },
-        { url: 'https://advertising-api-eu.amazon.com/sp/campaigns', name: 'v3: /sp/campaigns' },
-        { url: 'https://advertising-api-eu.amazon.com/v2/sp/campaigns', name: 'v2: /v2/sp/campaigns' }
+        { url: 'https://advertising-api-eu.amazon.com/spcampaigns', name: '/spcampaigns' },
+        { url: 'https://advertising-api-eu.amazon.com/v2/spcampaigns', name: 'v2: /v2/spcampaigns' },
+        { url: 'https://advertising-api-eu.amazon.com/v3/spcampaigns', name: 'v3: /v3/spcampaigns' },
+        { url: 'https://advertising-api-eu.amazon.com/sp/campaigns', name: '/sp/campaigns' },
+        { url: 'https://advertising-api-eu.amazon.com/v2/sp/campaigns', name: 'v2: /v2/sp/campaigns' },
+        { url: 'https://advertising-api-eu.amazon.com/v3/sp/campaigns', name: 'v3: /v3/sp/campaigns' }
       ];
       
       let campaigns = null;
@@ -101,9 +104,12 @@ export class CampaignsController {
       const profileId = process.env.AMAZON_PROFILE_ID;
       
       const endpointsToTry = [
-        `https://advertising-api-eu.amazon.com/v3/sp/campaigns/${campaignId}`,
+        `https://advertising-api-eu.amazon.com/spcampaigns/${campaignId}`,
+        `https://advertising-api-eu.amazon.com/v2/spcampaigns/${campaignId}`,
+        `https://advertising-api-eu.amazon.com/v3/spcampaigns/${campaignId}`,
         `https://advertising-api-eu.amazon.com/sp/campaigns/${campaignId}`,
-        `https://advertising-api-eu.amazon.com/v2/sp/campaigns/${campaignId}`
+        `https://advertising-api-eu.amazon.com/v2/sp/campaigns/${campaignId}`,
+        `https://advertising-api-eu.amazon.com/v3/sp/campaigns/${campaignId}`
       ];
       
       let campaign = null;
@@ -226,7 +232,10 @@ export class CampaignsController {
           let endpoint = null;
           
           const endpointsToTry = [
-            { url: 'https://advertising-api-eu.amazon.com/sp/campaigns', name: 'v3: /sp/campaigns' },
+            { url: 'https://advertising-api-eu.amazon.com/spcampaigns', name: '/spcampaigns' },
+            { url: 'https://advertising-api-eu.amazon.com/v2/spcampaigns', name: 'v2: /v2/spcampaigns' },
+            { url: 'https://advertising-api-eu.amazon.com/v3/spcampaigns', name: 'v3: /v3/spcampaigns' },
+            { url: 'https://advertising-api-eu.amazon.com/sp/campaigns', name: '/sp/campaigns' },
             { url: 'https://advertising-api-eu.amazon.com/v2/sp/campaigns', name: 'v2: /v2/sp/campaigns' },
             { url: 'https://advertising-api-eu.amazon.com/v3/sp/campaigns', name: 'v3: /v3/sp/campaigns' },
             { url: 'https://advertising-api-eu.amazon.com/sb/campaigns', name: 'sb: /sb/campaigns' }
