@@ -21,6 +21,14 @@ export class AmazonAuthService {
     // Otherwise, refresh the token
     this.logger.log('🔄 Refreshing access token...');
     await this.refreshAccessToken();
+    
+    // Validate the token before returning
+    if (!this.accessToken || this.accessToken.length < 20) {
+      this.logger.error(`❌ CRITICAL: Invalid access token received! Length: ${this.accessToken?.length || 0}`);
+      throw new Error('Invalid access token received from Amazon');
+    }
+    
+    this.logger.log(`✅ Valid access token retrieved (${this.accessToken.length} chars)`);
     return this.accessToken;
   }
 
@@ -29,7 +37,13 @@ export class AmazonAuthService {
     const clientSecret = this.configService.get<string>('AMAZON_CLIENT_SECRET');
     const refreshToken = this.configService.get<string>('AMAZON_REFRESH_TOKEN');
 
+    this.logger.log('📋 Environment Variables Check:');
+    this.logger.log(`   AMAZON_CLIENT_ID: ${clientId ? '✅ SET (' + clientId.substring(0, 10) + '...)' : '❌ MISSING'}`);
+    this.logger.log(`   AMAZON_CLIENT_SECRET: ${clientSecret ? '✅ SET (' + clientSecret.substring(0, 10) + '...)' : '❌ MISSING'}`);
+    this.logger.log(`   AMAZON_REFRESH_TOKEN: ${refreshToken ? '✅ SET (' + refreshToken.substring(0, 20) + '...)' : '❌ MISSING'}`);
+
     if (!clientId || !clientSecret || !refreshToken) {
+      this.logger.error('❌ Missing Amazon API credentials in environment variables');
       throw new Error('Missing Amazon API credentials in environment variables');
     }
 
@@ -59,6 +73,9 @@ export class AmazonAuthService {
       this.tokenExpiry = new Date(Date.now() + expiresIn * 1000);
 
       this.logger.log(`✅ Access token refreshed successfully`);
+      this.logger.log(`   Token length: ${this.accessToken?.length || 0} chars`);
+      this.logger.log(`   Token preview: ${this.accessToken?.substring(0, 30)}...`);
+      this.logger.log(`   Expires in: ${expiresIn} seconds`);
       this.logger.log(`   Token expires at: ${this.tokenExpiry.toISOString()}`);
     } catch (error) {
       this.logger.error('❌ Failed to refresh access token:', error.response?.data || error.message);
