@@ -211,4 +211,41 @@ export class CampaignsService {
       throw error;
     }
   }
+
+  /**
+   * Sync performance metrics (stub for optimization service)
+   */
+  async syncPerformanceMetrics(): Promise<any> {
+    this.logger.log('📊 Syncing performance metrics (in-memory only)');
+    // Returns cached campaigns data
+    return this.campaignsCache;
+  }
+
+  /**
+   * Optimize targeting (stub for optimization service)
+   */
+  async optimizeTargeting(campaignId: string): Promise<any> {
+    this.logger.log(`🎯 Optimizing targeting for campaign: ${campaignId} (stub)`);
+    // Stub implementation - queues optimization
+    return { success: true, message: 'Targeting optimization queued' };
+  }
+
+  /**
+   * Update campaign (stub for optimization service)
+   */
+  async updateCampaign(campaignId: string, updates: any): Promise<any> {
+    this.logger.log(`📝 Updating campaign: ${campaignId}`);
+    try {
+      // Update cache
+      const campaign = this.campaignsCache.find(c => c.campaignId === campaignId);
+      if (campaign) {
+        Object.assign(campaign, updates);
+      }
+      
+      return { success: true, campaign };
+    } catch (error) {
+      this.logger.error(`❌ Failed to update campaign ${campaignId}:`, error.message);
+      throw error;
+    }
+  }
 }
