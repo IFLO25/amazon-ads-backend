@@ -149,27 +149,46 @@ export class CampaignsController {
         this.logger.log(`🔍 Testing Profile ID: ${profileId} (${countryCode})...`);
         
         try {
-          // Make direct API call with this profile ID
-          const campaignsResponse = await axios.get('https://advertising-api-eu.amazon.com/sp/campaigns', {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Amazon-Advertising-API-ClientId': clientId,
-              'Amazon-Advertising-API-Scope': String(profileId),
-              'Content-Type': 'application/json'
-            }
-          });
+          // Try BOTH v2 and v3 endpoints
+          let campaigns = null;
+          let apiVersion = null;
           
-          const campaigns = campaignsResponse.data;
+          // First try v2 endpoint
+          try {
+            const v2Response = await axios.get('https://advertising-api-eu.amazon.com/v2/sp/campaigns', {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Amazon-Advertising-API-ClientId': clientId,
+                'Amazon-Advertising-API-Scope': String(profileId),
+                'Content-Type': 'application/json'
+              }
+            });
+            campaigns = v2Response.data;
+            apiVersion = 'v2';
+          } catch (v2Error) {
+            // If v2 fails, try v3
+            const v3Response = await axios.get('https://advertising-api-eu.amazon.com/sp/campaigns', {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Amazon-Advertising-API-ClientId': clientId,
+                'Amazon-Advertising-API-Scope': String(profileId),
+                'Content-Type': 'application/json'
+              }
+            });
+            campaigns = v3Response.data;
+            apiVersion = 'v3';
+          }
           
           results.push({
             profileId,
             countryCode,
             success: true,
+            apiVersion,
             campaignCount: campaigns.length,
-            message: `✅ SUCCESS - Found ${campaigns.length} campaigns`
+            message: `✅ SUCCESS (${apiVersion}) - Found ${campaigns.length} campaigns`
           });
           
-          this.logger.log(`✅ Profile ${profileId} (${countryCode}): ${campaigns.length} campaigns`);
+          this.logger.log(`✅ Profile ${profileId} (${countryCode}): ${campaigns.length} campaigns using ${apiVersion}`);
         } catch (error) {
           const errorStatus = error.response?.status || 'No status';
           const errorMessage = error.response?.data?.details || error.response?.data?.message || error.message;
