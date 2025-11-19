@@ -49,13 +49,25 @@ async function bootstrap() {
   logger.log('='.repeat(60));
   logger.log(`🚀 Amazon Advertising Service started on port ${port}`);
   logger.log(`📚 Swagger: http://localhost:${port}/api-docs`);
+  logger.log('='.repeat(60));
   
   // Check critical env vars
   const clientId = configService.get('amazon.clientId');
   const profileId = configService.get('amazon.profileId');
+  const accountId = configService.get('amazon.advertisingAccountId');
   
-  if (!clientId || !profileId) {
-    logger.error('❌ Missing critical environment variables!');
+  logger.log('🔐 Environment Variables Status:');
+  logger.log(`   - AMAZON_CLIENT_ID: ${clientId ? '✅ SET' : '❌ MISSING'}`);
+  logger.log(`   - AMAZON_PROFILE_ID: ${profileId ? '✅ SET (' + profileId + ')' : '❌ MISSING'}`);
+  logger.log(`   - AMAZON_ADVERTISING_API_SCOPE: ${accountId ? '✅ SET (' + accountId + ')' : '❌ MISSING'}`);
+  logger.log('='.repeat(60));
+  
+  if (!clientId) {
+    logger.error('❌ AMAZON_CLIENT_ID is missing!');
+  }
+  if (!profileId && !accountId) {
+    logger.error('❌ Neither AMAZON_PROFILE_ID nor AMAZON_ADVERTISING_API_SCOPE is set!');
+    logger.error('   You MUST set one of these environment variables in Railway!');
   }
 }
 
