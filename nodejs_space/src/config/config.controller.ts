@@ -1,9 +1,10 @@
 
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty } from 'class-validator';
 import { AmazonAuthService } from '../amazon-auth/amazon-auth.service';
 import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 
 export class CredentialsDto {
   @ApiProperty({ example: 'amzn1.application-oa2-client.abc123', description: 'Amazon API Client ID' })
@@ -25,6 +26,8 @@ export class CredentialsDto {
 @ApiTags('config')
 @Controller('config')
 export class ConfigController {
+  private readonly logger = new Logger(ConfigController.name);
+
   constructor(
     private readonly amazonAuth: AmazonAuthService,
     private readonly config: ConfigService,
@@ -180,6 +183,108 @@ export class ConfigController {
         error: error.message,
         details: error.response?.data || 'No additional details',
         statusCode: error.response?.status,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  @Get('test-all-profiles')
+  @ApiOperation({ 
+    summary: '🧪 TEST: Test API access with all available Profile IDs',
+    description: 'Tests /sp/campaigns endpoint with each profile ID to find which one works'
+  })
+  @ApiResponse({ status: 200, description: 'Returns test results for each profile ID' })
+  async testAllProfiles() {
+    try {
+      const profiles = await this.amazonAuth.getProfiles();
+      const accountId = this.config.get<string>('amazon.advertisingAccountId');
+      const currentProfileId = this.config.get<string>('amazon.profileId');
+      const accessToken = await this.amazonAuth.getAccessToken();
+      const clientId = this.config.get<string>('amazon.clientId');
+      
+      const results = [];
+
+      this.logger.log('🧪 Testing API access with different IDs...');
+
+      // Test with Account ID
+      if (accountId) {
+        this.logger.log(`Testing Account ID: ${accountId}`);
+        try {
+          const response = await axios.get(
+            'https://advertising-api-eu.amazon.com/sp/campaigns',
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Amazon-Advertising-API-ClientId': clientId,
+                'Amazon-Advertising-API-Scope': accountId,
+              },
+            },
+          );
+          results.push({ id: accountId, type: 'Account ID', status: '✅ SUCCESS', campaigns: response.data.length });
+        } catch (error) {
+          results.push({ 
+            id: accountId, 
+            type: 'Account ID', 
+            status: '❌ FAILED', 
+            error: error.response?.data?.details || error.response?.data || error.message 
+          });
+        }
+      }
+
+      // Test each profile from the list
+      for (const profile of profiles) {
+        this.logger.log(`Testing Profile ID: ${profile.profileId} (${profile.countryCode})`);
+        try {
+          const response = await axios.get(
+            'https://advertising-api-eu.amazon.com/sp/campaigns',
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Amazon-Advertising-API-ClientId': clientId,
+                'Amazon-Advertising-API-Scope': profile.profileId.toString(),
+              },
+            },
+          );
+          results.push({ 
+            id: profile.profileId, 
+            type: `Profile (${profile.countryCode})`, 
+            status: '✅ SUCCESS', 
+            campaigns: response.data.length,
+            isCurrent: profile.profileId.toString() === currentProfileId,
+          });
+        } catch (error) {
+          results.push({ 
+            id: profile.profileId, 
+            type: `Profile (${profile.countryCode})`, 
+            status: '❌ FAILED', 
+            error: error.response?.data?.details || error.response?.data || error.message,
+            isCurrent: profile.profileId.toString() === currentProfileId,
+          });
+        }
+      }
+
+      const workingId = results.find(r => r.status === '✅ SUCCESS');
+
+      return {
+        success: true,
+        message: '🧪 Profile access test completed',
+        tested: results.length,
+        results,
+        recommendation: workingId 
+          ? `✅ Working ID found: ${workingId.id} (${workingId.type}) - Set this as AMAZON_PROFILE_ID in Railway!` 
+          : '❌ No working profile/account ID found. Your refresh token may not have the correct API scopes.',
+        currentSettings: {
+          AMAZON_PROFILE_ID: currentProfileId || 'NOT SET',
+          AMAZON_ADVERTISING_API_SCOPE: accountId || 'NOT SET',
+        },
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error('Failed to test profile access', error);
+      return {
+        success: false,
+        message: '❌ Failed to test profile access',
+        error: error.message,
         timestamp: new Date().toISOString(),
       };
     }
