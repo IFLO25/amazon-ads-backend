@@ -2,13 +2,17 @@
 import { Controller, Get, Param, Post, Put, Body, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { AmazonApiClient } from '../amazon-auth/amazon-api.client';
+import { AmazonAuthService } from '../amazon-auth/amazon-auth.service';
 
 @ApiTags('campaigns')
 @Controller('campaigns')
 export class CampaignsController {
   private readonly logger = new Logger(CampaignsController.name);
 
-  constructor(private readonly amazonApi: AmazonApiClient) {}
+  constructor(
+    private readonly amazonApi: AmazonApiClient,
+    private readonly amazonAuth: AmazonAuthService
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all campaigns from Amazon Ads API' })
@@ -116,8 +120,24 @@ export class CampaignsController {
     try {
       this.logger.log('🧪 Testing all profiles for /sp/campaigns access...');
       
-      // First, get all profiles
-      const profiles = await this.amazonApi.get<any[]>('/v2/profiles');
+      // Use axios directly to avoid any ConfigService issues
+      const axios = require('axios');
+      const accessToken = await this.amazonAuth.getAccessToken();
+      const clientId = process.env.AMAZON_CLIENT_ID;
+      
+      this.logger.log(`🔑 Access Token length: ${accessToken.length}`);
+      this.logger.log(`🔑 Client ID: ${clientId}`);
+      
+      // First, get all profiles using direct axios call
+      const profilesResponse = await axios.get('https://advertising-api-eu.amazon.com/v2/profiles', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Amazon-Advertising-API-ClientId': clientId,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const profiles = profilesResponse.data;
       this.logger.log(`📋 Found ${profiles.length} profiles`);
       
       const results = [];
@@ -129,14 +149,17 @@ export class CampaignsController {
         this.logger.log(`🔍 Testing Profile ID: ${profileId} (${countryCode})...`);
         
         try {
-          // Temporarily override the profile ID for this request
-          const originalEnv = process.env.AMAZON_PROFILE_ID;
-          process.env.AMAZON_PROFILE_ID = String(profileId);
+          // Make direct API call with this profile ID
+          const campaignsResponse = await axios.get('https://advertising-api-eu.amazon.com/sp/campaigns', {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Amazon-Advertising-API-ClientId': clientId,
+              'Amazon-Advertising-API-Scope': String(profileId),
+              'Content-Type': 'application/json'
+            }
+          });
           
-          const campaigns = await this.amazonApi.get<any[]>('/sp/campaigns');
-          
-          // Restore original env
-          process.env.AMAZON_PROFILE_ID = originalEnv;
+          const campaigns = campaignsResponse.data;
           
           results.push({
             profileId,
@@ -148,19 +171,19 @@ export class CampaignsController {
           
           this.logger.log(`✅ Profile ${profileId} (${countryCode}): ${campaigns.length} campaigns`);
         } catch (error) {
-          // Restore original env
-          const originalEnv = process.env.AMAZON_PROFILE_ID;
-          process.env.AMAZON_PROFILE_ID = originalEnv;
+          const errorStatus = error.response?.status || 'No status';
+          const errorMessage = error.response?.data?.details || error.response?.data?.message || error.message;
           
           results.push({
             profileId,
             countryCode,
             success: false,
-            error: error.response?.data || error.message,
-            message: `❌ FAILED - ${error.response?.status || 'Unknown error'}`
+            status: errorStatus,
+            error: error.response?.data || errorMessage,
+            message: `❌ FAILED - ${errorStatus}: ${errorMessage}`
           });
           
-          this.logger.error(`❌ Profile ${profileId} (${countryCode}): ${error.response?.status}`);
+          this.logger.error(`❌ Profile ${profileId} (${countryCode}): ${errorStatus} - ${errorMessage}`);
         }
       }
       
