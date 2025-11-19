@@ -7,7 +7,8 @@ export default () => ({
     clientId: process.env.AMAZON_CLIENT_ID,
     clientSecret: process.env.AMAZON_CLIENT_SECRET,
     refreshToken: process.env.AMAZON_REFRESH_TOKEN,
-    advertisingAccountId: process.env.AMAZON_ADVERTISING_ACCOUNT_ID,
+    // Use AMAZON_ADVERTISING_API_SCOPE first, fallback to AMAZON_ADVERTISING_ACCOUNT_ID
+    advertisingAccountId: process.env.AMAZON_ADVERTISING_API_SCOPE || process.env.AMAZON_ADVERTISING_ACCOUNT_ID,
     marketplace: process.env.AMAZON_MARKETPLACE || 'EU',
     sellerId: process.env.AMAZON_SELLER_ID,
     apiEndpoint: 'https://advertising-api-eu.amazon.com',

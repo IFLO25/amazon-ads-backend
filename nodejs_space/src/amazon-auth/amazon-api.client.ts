@@ -25,7 +25,12 @@ export class AmazonApiClient {
     this.logger.log('🔧 Initializing Amazon API Client...');
     this.logger.log(`   - API Endpoint: ${apiEndpoint}`);
     this.logger.log(`   - Client ID: ${clientId ? clientId.substring(0, 10) + '...' : '❌ MISSING'}`);
-    this.logger.log(`   - Account ID: ${accountId ? accountId : '❌ MISSING'}`);
+    this.logger.log(`   - API Scope (from env): ${accountId ? accountId : '❌ MISSING'}`);
+    
+    // Log the actual environment variables to debug
+    this.logger.log('🔍 Environment Variables Debug:');
+    this.logger.log(`   - AMAZON_ADVERTISING_API_SCOPE: ${process.env.AMAZON_ADVERTISING_API_SCOPE ? '✅ SET' : '❌ MISSING'}`);
+    this.logger.log(`   - AMAZON_ADVERTISING_ACCOUNT_ID: ${process.env.AMAZON_ADVERTISING_ACCOUNT_ID ? '✅ SET' : '❌ MISSING'}`);
 
     if (!clientId) {
       this.logger.error('❌ AMAZON_CLIENT_ID is not set!');
