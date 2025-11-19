@@ -155,7 +155,7 @@ export class ConfigController {
   @ApiResponse({ status: 200, description: 'Returns list of all available advertising profiles' })
   async listProfiles() {
     try {
-      const profiles = await this.amazonAuth.fetchProfiles();
+      const profiles = await this.amazonAuth.getProfiles();
       
       return {
         success: true,
